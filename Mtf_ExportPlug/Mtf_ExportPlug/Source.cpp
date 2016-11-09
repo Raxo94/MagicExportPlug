@@ -1,25 +1,32 @@
-// UD1414_Plugin.cpp : Defines the exported functions for the DLL application.
+///To be replacing the fbxExporter
+///This plugin's main purpose is to gather all the object in the scene and send them as one model.
+///The model will then be made into a binary file Ready to be loaded by an importer.
 
-#include "maya_includes.h"
-#include <iostream>
+
+#include "ModelAssembler.h"
 
 using namespace std;
 
-// called when the plugin is loaded
+
 EXPORT MStatus initializePlugin(MObject obj)
 {
-	// most functions will use this variable to indicate for errors
 	MStatus res = MS::kSuccess;
 
 	MFnPlugin myPlugin(obj, "Maya plugin", "1.0", "Any", &res);
 	if (MFAIL(res)) {
 		CHECK_MSTATUS(res);
+		return res; //Plugin not loaded
 	}
 
 	MGlobal::displayInfo("Maya plugin loaded!");
-	// if res == kSuccess then the plugin has been loaded,
-	// otherwise is has not.
-	return res;
+	
+	//This is where things hapen
+
+
+
+
+	return MS::kSuccess;
+	
 }
 
 

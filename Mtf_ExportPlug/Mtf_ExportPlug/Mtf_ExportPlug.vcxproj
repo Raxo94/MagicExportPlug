@@ -19,9 +19,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ModelAssembler.h" />
     <ClInclude Include="maya_includes.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ModelAssembler.cpp" />
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
