@@ -2,8 +2,8 @@
 ///This plugin's main purpose is to gather all the object in the scene and send them as one model.
 ///The model will then be made into a binary file Ready to be loaded by an importer.
 
-// some definitions for the DLL to play nice with Maya
-#define NT_PLUGIN
+
+#define NT_PLUGIN // some definitions for the DLL to play nice with Maya
 #define REQUIRE_IOSTREAM
 #define EXPORT __declspec(dllexport)
 
@@ -22,9 +22,12 @@ EXPORT MStatus initializePlugin(MObject obj)
 		CHECK_MSTATUS(res);
 		return res; //Plugin not loaded
 	}
-	MGlobal::displayInfo("Maya plugin loaded!");
 
 	ModelAssembler Assembler;
+
+	MGlobal::displayInfo("Maya plugin loaded!");
+
+	
 
 	return MS::kSuccess;
 	
@@ -33,6 +36,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 
 EXPORT MStatus uninitializePlugin(MObject obj)
 {
+	ModelAssembler Assembler();
 	// simply initialize the Function set with the MObject that represents
 	// our plugin
 	MFnPlugin plugin(obj);
