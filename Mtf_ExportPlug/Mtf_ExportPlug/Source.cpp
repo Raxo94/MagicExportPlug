@@ -2,7 +2,12 @@
 ///This plugin's main purpose is to gather all the object in the scene and send them as one model.
 ///The model will then be made into a binary file Ready to be loaded by an importer.
 
+// some definitions for the DLL to play nice with Maya
+#define NT_PLUGIN
+#define REQUIRE_IOSTREAM
+#define EXPORT __declspec(dllexport)
 
+#include <maya/MFnPlugin.h>
 #include "ModelAssembler.h"
 
 using namespace std;
