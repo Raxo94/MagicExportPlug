@@ -5,13 +5,22 @@
 #include <iostream>
 
 
-//Headers
+struct HeaderMesh
+{
+	unsigned int VertexCount = 0;
+};
 
-//class ModelAssembler
-//{
-//public:
-//
-//	ModelAssembler();
-//	~ModelAssembler();
-//};
+class ModelAssembler
+{
+
+
+public:
+
+	ModelAssembler();
+	~ModelAssembler();
+
+private:
+	MStatus res;
+
+};
 #endif

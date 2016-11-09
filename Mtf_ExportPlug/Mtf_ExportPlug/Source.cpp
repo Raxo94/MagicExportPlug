@@ -22,13 +22,9 @@ EXPORT MStatus initializePlugin(MObject obj)
 		CHECK_MSTATUS(res);
 		return res; //Plugin not loaded
 	}
-
 	MGlobal::displayInfo("Maya plugin loaded!");
-	
-	//This is where things hapen
 
-
-
+	ModelAssembler Assembler;
 
 	return MS::kSuccess;
 	
