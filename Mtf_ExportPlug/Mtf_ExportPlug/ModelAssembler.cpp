@@ -18,12 +18,16 @@ void ModelAssembler::AssembleMeshes()
 	{
 		if (it.currentItem().hasFn(MFn::kMesh))
 		{
-			MFnMesh mayaMesh(it.currentItem());
+			MFnMesh meshNode(it.currentItem()); //the meshNode
 			Mesh tempMesh;
-
+			vector<vertex>nodeVertices;
 
 			MFloatPointArray pts;
+			MIntArray vertexCounts;
+			MIntArray polygonVertexIDs;
 			MFloatArray u, v;
+			MIntArray uvCounts;
+			MIntArray uvIDs;
 			MFloatVectorArray normals;
 			MIntArray triangleCountsOffsets;
 			MIntArray triangleIndices;
@@ -32,61 +36,61 @@ void ModelAssembler::AssembleMeshes()
 			MVector vertexNormal;
 			MIntArray normalList, normalCount;
 
+			meshNode.getPoints(pts, MSpace::kObject);
+			meshNode.getUVs(u, v, 0);
+			meshNode.getAssignedUVs(uvCounts, uvIDs); //indices for UV:s
 
-			mayaMesh.getPoints(pts, MSpace::kObject);
-			mayaMesh.getUVs(u, v, 0);
-			mayaMesh.getTriangleOffsets(triangleCountsOffsets, triangleIndices);
-			mayaMesh.getTriangles(triangleCounts, triangleVertexIDs);
-			mayaMesh.getNormals(normals, MSpace::kObject);
+			meshNode.getTriangleOffsets(triangleCountsOffsets, triangleIndices);
+			meshNode.getVertices(vertexCounts, polygonVertexIDs); //get vertex polygon indices
+			meshNode.getNormals(normals, MSpace::kObject);
 
-			std::vector<vertex> VertexVectorTemp;
-			VertexVectorTemp.resize(triangleVertexIDs.length());
+			nodeVertices.resize(triangleIndices.length());
 
-			mayaMesh.getNormalIds(normalCount, normalList);
+			meshNode.getNormalIds(normalCount, normalList);
 
 
-			for (size_t i = 0; i < triangleVertexIDs.length(); i++)
-			{
+			for (unsigned int i = 0; i < triangleIndices.length(); i++) 
+			{ //for each triangle index (36)
 
-				VertexVectorTemp.at(i).pos[0] = pts[triangleVertexIDs[i]].x;
-				VertexVectorTemp.at(i).pos[1] = pts[triangleVertexIDs[i]].y;
-				VertexVectorTemp.at(i).pos[2] = pts[triangleVertexIDs[i]].z;
+				nodeVertices.at(i).pos[0] = pts[polygonVertexIDs[triangleIndices[i]]].x;
+				nodeVertices.at(i).pos[1] = pts[polygonVertexIDs[triangleIndices[i]]].y;
+				nodeVertices.at(i).pos[2] = pts[polygonVertexIDs[triangleIndices[i]]].z;
 
-				VertexVectorTemp.at(i).nor[0] = normals[triangleVertexIDs[i]].x;
-				VertexVectorTemp.at(i).nor[1] = normals[triangleVertexIDs[i]].y;
-				VertexVectorTemp.at(i).nor[2] = normals[triangleVertexIDs[i]].z;
+				nodeVertices.at(i).nor[0] = normals[normalList[triangleIndices[i]]].x;
+				nodeVertices.at(i).nor[1] = normals[normalList[triangleIndices[i]]].y;
+				nodeVertices.at(i).nor[2] = normals[normalList[triangleIndices[i]]].z;
 
-				VertexVectorTemp.at(i).uv[0] = u[triangleVertexIDs[i]];
-				VertexVectorTemp.at(i).uv[1] = v[triangleVertexIDs[i]];
+				nodeVertices.at(i).uv[0] = u[uvIDs[triangleIndices[i]]];
+				nodeVertices.at(i).uv[1] = v[uvIDs[triangleIndices[i]]];
 
+
+				//indexing: if the tempMesh contains current vertex we list the earlier one in the indexlist;
 				bool VertexIsUnique = true;
-				for (size_t PassedVertex = 0; PassedVertex < tempMesh.Vertices.size(); PassedVertex++)
+				for (size_t j = 0; j < tempMesh.Vertices.size(); j++) 
 				{
-					
-					if (VertexVectorTemp.at(i) == tempMesh.Vertices.at(PassedVertex))
+
+					if (nodeVertices.at(i) == tempMesh.Vertices.at(j))
 					{
-						tempMesh.indexes.push_back(PassedVertex);
+						tempMesh.indexes.push_back(j);
 						VertexIsUnique = false;
 						break; // get out of loop
 					}
-					
-				}
-				if (VertexIsUnique == true)
-				{
-					tempMesh.indexes.push_back(tempMesh.Vertices.size());
-					tempMesh.Vertices.push_back(VertexVectorTemp.at(i));
-				}
-				
-			}//VERTEXLIST
 
+				}
+					if (VertexIsUnique == true)
+					{
+						tempMesh.indexes.push_back(tempMesh.Vertices.size());
+						tempMesh.Vertices.push_back(nodeVertices.at(i));
+					}
+
+
+			}//Vertex END
 
 			Meshes.push_back(tempMesh);
 
-
-		}// END OF Mesh
+		}//Mesh END
 		it.next();
-		
-	}//End of loop
+	}//Loop END 
 }
 
 bool operator==(const vertex & left, const vertex & right)
