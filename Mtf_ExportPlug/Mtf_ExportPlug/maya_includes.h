@@ -1,6 +1,11 @@
 #pragma once
 
 
+#define NT_PLUGIN // some definitions for the DLL to play nice with Maya
+#define REQUIRE_IOSTREAM
+#define EXPORT __declspec(dllexport)
+
+#include <maya/MFloatMatrix.h>
 #include <maya/MFnMesh.h>
 #include <maya/MFnTransform.h>
 #include <maya/MFloatPointArray.h>
@@ -23,6 +28,9 @@
 #include <maya/MFnPointLight.h>
 #include <maya/MSelectionList.h>
 #include <maya/MItDependencyNodes.h>
+#include <maya/MPlug.h>
+#include <maya/MFnNumericData.h>
+#include <vector>
 
 // Wrappers
 #include <maya/MGlobal.h>
