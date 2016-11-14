@@ -34,9 +34,13 @@ struct Mesh
 	char MeshName[256];
 	vector<vertex> Vertices;
 	vector<unsigned int> indexes;
-	//Material
-	//WorldMatrix
+};
+struct SkeletalMesh
+{
 
+	char MeshName[256];
+	vector<vertex> Vertices;
+	vector<unsigned int> indexes;
 };
 
 class ModelAssembler
