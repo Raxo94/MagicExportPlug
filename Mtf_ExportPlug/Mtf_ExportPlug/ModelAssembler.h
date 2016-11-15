@@ -29,18 +29,25 @@ struct Material
 
 //WorldMatrix
 
+struct Transform
+{
+	float translation[3];
+	double scale[3];
+	double rotation[4];
+};
+
 struct Mesh
 {
 	char MeshName[256];
 	vector<vertex> Vertices;
 	vector<unsigned int> indexes;
-};
-struct SkeletalMesh
-{
+	Transform transform;
 
-	char MeshName[256];
-	vector<vertex> Vertices;
-	vector<unsigned int> indexes;
+};
+
+struct Skeleton
+{
+	int Nothing;
 };
 
 class ModelAssembler
@@ -60,6 +67,8 @@ private:
 	void AssembleMeshes();
 	void AssembleSkeletalMesh();
 	void AssembleMaterials();
+
+	Transform GetTransform(MFnTransform &transform);
 
 };
 #endif

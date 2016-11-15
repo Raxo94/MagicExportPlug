@@ -13,16 +13,22 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Assembler">
+      <UniqueIdentifier>{ceff7e5f-6629-42b2-9381-c8bfd69844fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Exporter">
+      <UniqueIdentifier>{3b0d93c3-7236-4f0d-b961-34684bfb0373}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="maya_includes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ModelAssembler.h">
-      <Filter>Header Files</Filter>
+      <Filter>Assembler</Filter>
     </ClInclude>
-    <ClInclude Include="ImportExample.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Exporter.h">
+      <Filter>Exporter</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -30,7 +36,10 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ModelAssembler.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Assembler</Filter>
+    </ClCompile>
+    <ClCompile Include="Exporter.cpp">
+      <Filter>Exporter</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

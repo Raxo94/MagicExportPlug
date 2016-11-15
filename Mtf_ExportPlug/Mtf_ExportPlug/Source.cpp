@@ -4,7 +4,7 @@
 
 #include <maya/MFnPlugin.h>
 #include "ModelAssembler.h"
-
+#include "Exporter.h"
 using namespace std;
 
 
@@ -18,11 +18,11 @@ EXPORT MStatus initializePlugin(MObject obj)
 		return res; //Plugin not loaded
 	}
 
-	ModelAssembler Assembler;
+	Exporter Export;
+
+
 
 	MGlobal::displayInfo("Maya plugin loaded!");
-
-
 	return MS::kSuccess;
 	
 }

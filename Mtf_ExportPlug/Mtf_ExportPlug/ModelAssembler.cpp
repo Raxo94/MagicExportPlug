@@ -21,8 +21,10 @@ void ModelAssembler::AssembleMeshes()
 		{
 			MFnMesh meshNode(it.currentItem()); //the meshNode
 			Mesh tempMesh;
-			vector<vertex>nodeVertices;
 
+			memcpy(&tempMesh.MeshName, meshNode.name().asChar(), sizeof(const char[256]));//MeshName
+
+			vector<vertex>nodeVertices;
 			MFloatPointArray pts;
 			MIntArray vertexCounts;
 			MIntArray polygonVertexIDs;
@@ -86,10 +88,17 @@ void ModelAssembler::AssembleMeshes()
 
 
 			}//Vertex END
-
+			
+			if (parent.hasFn(MFn::kTransform))
+			{
+				MFnTransform transformNode(parent);
+				tempMesh.transform = GetTransform(transformNode);
+			}
+			
 			Meshes.push_back(tempMesh);
 
 		}//Mesh END
+		parent = it.currentItem();
 		it.next();
 	}//Loop END 
 }
@@ -172,6 +181,20 @@ void ModelAssembler::AssembleMaterials()
 
 		itDepNode.next();
 	}
+}
+
+Transform ModelAssembler::GetTransform(MFnTransform & transform)
+
+{
+	Transform result;
+	result.translation[0] = transform.getTranslation(MSpace::kTransform).x;
+	result.translation[1] = transform.getTranslation(MSpace::kTransform).y;
+	result.translation[2] = transform.getTranslation(MSpace::kTransform).z;
+
+	transform.getScale(result.scale);
+	transform.getRotationQuaternion(result.rotation[0], result.rotation[1], result.rotation[2], result.rotation[3], MSpace::kTransform);
+
+	return result;
 }
 
 bool operator==(const vertex & left, const vertex & right)
