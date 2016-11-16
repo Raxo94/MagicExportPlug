@@ -24,11 +24,16 @@ class Exporter
 
 	struct sVertex
 	{
-		float vertexPos[3];
-		float vertexNormal[3];
-		float vertexUV[2];
+		std::array<float, 3> pos;
+		std::array<float, 3> nor;
+		std::array<float, 2> uv;
 		float tangentNormal[3];
 		float biTangentNormal[3];
+	};
+
+	struct sVertexVector
+	{
+		vector<sVertex> vertices;
 	};
 
 	struct sMaterial
@@ -60,11 +65,19 @@ public:
 	Exporter();
 	~Exporter();
 
-	void prepareMeshData();
+	void writeToFile(string filepath);
+	
+
 private:
 	sDataHeader dataHeader;
+
 	ModelAssembler* assamble;
-	vector<sMesh> Meshes;
+	vector<assembleStructs::Mesh> assembleMeshes;
+	vector<sVertexVector> VertexVectors; //this contains all vertexLists
+	vector<sMesh> meshVector;
+	void prepareMeshData(assembleStructs::Mesh);
+	
+
 
 
 };

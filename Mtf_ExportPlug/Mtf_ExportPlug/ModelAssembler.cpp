@@ -10,6 +10,11 @@ ModelAssembler::~ModelAssembler()
 {
 }
 
+vector<Mesh>& ModelAssembler::GetMeshVector()
+{
+	return Meshes;
+}
+
 void ModelAssembler::AssembleMeshes()
 {
 	MItDag it(MItDag::kDepthFirst);
@@ -88,7 +93,7 @@ void ModelAssembler::AssembleMeshes()
 
 
 			}//Vertex END
-			
+			tempMesh.vertexCount = tempMesh.Vertices.size();
 			if (parent.hasFn(MFn::kTransform))
 			{
 				MFnTransform transformNode(parent);
@@ -197,7 +202,8 @@ Transform ModelAssembler::GetTransform(MFnTransform & transform)
 	return result;
 }
 
-bool operator==(const vertex & left, const vertex & right)
+
+bool assembleStructs::operator==(const assembleStructs::vertex & left, const assembleStructs::vertex & right)
 {
 	if (left.pos == right.pos)
 	{

@@ -5,6 +5,7 @@
 #include <maya/MFnPlugin.h>
 #include "ModelAssembler.h"
 #include "Exporter.h"
+#include <fstream>
 using namespace std;
 
 
@@ -19,7 +20,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 	}
 
 	Exporter Export;
-
+	Export.writeToFile("C:/mesh.mtf");
 
 
 	MGlobal::displayInfo("Maya plugin loaded!");
