@@ -24,11 +24,11 @@
     <ClInclude Include="maya_includes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ModelAssembler.h">
-      <Filter>Assembler</Filter>
-    </ClInclude>
     <ClInclude Include="Exporter.h">
       <Filter>Exporter</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelAssembler.h">
+      <Filter>Assembler</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

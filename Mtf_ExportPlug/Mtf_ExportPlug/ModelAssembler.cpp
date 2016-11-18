@@ -196,7 +196,13 @@ Transform ModelAssembler::GetTransform(MFnTransform & transform)
 	result.translation[1] = transform.getTranslation(MSpace::kTransform).y;
 	result.translation[2] = transform.getTranslation(MSpace::kTransform).z;
 
-	transform.getScale(result.scale);
+	double dScale[3]; float fScale[3];
+	transform.getScale(dScale);
+
+	result.scale[0] = dScale[0];
+	result.scale[1] = dScale[1];
+	result.scale[2] = dScale[2];
+
 	transform.getRotationQuaternion(result.rotation[0], result.rotation[1], result.rotation[2], result.rotation[3], MSpace::kTransform);
 
 	return result;

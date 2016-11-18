@@ -20,7 +20,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 	}
 
 	Exporter Export;
-	Export.writeToFile("C:/mesh.mtf");
+	Export.writeToFile("C:/Git/mesh.mtf");
 
 
 	MGlobal::displayInfo("Maya plugin loaded!");

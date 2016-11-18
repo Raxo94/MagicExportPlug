@@ -9,17 +9,23 @@ class Exporter
 		unsigned int materialCount;
 	};
 
+	struct sOffset
+	{
+		int joint, vertex, index, skeletonVertex;
+	};
+
 	struct sMesh
 	{
 		unsigned int materialID;
 		int parentMeshID, parentJointID;
-		float translation[3], rotation[3], scale[3];
+		std::array<float,3> translation, rotation, scale;
 		bool isBoundingBox, isAnimated;
 
-		unsigned int meshChildCount;
-		unsigned int vertexCount;
-		unsigned int skeletonVertexCount;
-		unsigned int jointCount;
+		unsigned int meshChildCount = 0;
+		unsigned int vertexCount = 0;
+		unsigned int indexCount = 0;
+		unsigned int skeletonVertexCount = 0;
+		unsigned int jointCount = 0;
 	};
 
 	struct sVertex
@@ -34,6 +40,10 @@ class Exporter
 	struct sVertexVector
 	{
 		vector<sVertex> vertices;
+	};
+	struct sIndexVector
+	{
+		vector<unsigned int> indexes;
 	};
 
 	struct sMaterial
@@ -58,6 +68,7 @@ class Exporter
 		int keycounts = 0;
 		int keyframes = 0;
 		int vertices = 0;
+		int indexes = 0;
 		int skeletonVertices = 0;
 	};
 
@@ -70,10 +81,15 @@ public:
 
 private:
 	sDataHeader dataHeader;
+	sHeader MainHeader;
+	sOffset offsetHeader;
 
 	ModelAssembler* assamble;
 	vector<assembleStructs::Mesh> assembleMeshes;
-	vector<sVertexVector> VertexVectors; //this contains all vertexLists
+
+	vector<sVertexVector> vertexVectors; //this contains all vertexLists
+	vector<sIndexVector> indexVectors; //this contains all indexLists;
+
 	vector<sMesh> meshVector;
 	void prepareMeshData(assembleStructs::Mesh);
 	

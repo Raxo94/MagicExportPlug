@@ -32,8 +32,8 @@ namespace assembleStructs
 
 	struct Transform
 	{
-		float translation[3];
-		double scale[3];
+		std::array <float,3> translation;
+		std::array <float,3> scale;
 		double rotation[4];
 	};
 
