@@ -30,10 +30,11 @@ void Exporter::prepareMeshData(assembleStructs::Mesh assembleMesh)
 	mesh.translation = assembleMesh.transform.translation;
 	mesh.scale = assembleMesh.transform.scale;
 	mesh.vertexCount = assembleMesh.vertexCount;
-
+	mesh.indexCount = assembleMesh.indexes.size();
 	mesh.materialID = 0;
 	mesh.parentJointID = 0;
 	mesh.parentMeshID = 0;
+	mesh.meshChildCount = 0;
 
 	mesh.skeletonVertexCount = 0;
 	mesh.jointCount = 0;
@@ -62,7 +63,8 @@ void Exporter::prepareMeshData(assembleStructs::Mesh assembleMesh)
 
 	indexVectors.push_back(iTemp);
 	dataHeader.meshes++;
-
+	dataHeader.vertices += mesh.vertexCount;
+	dataHeader.indexes = mesh.indexCount;
 }
 
 void Exporter::writeToFile(string filepath)
@@ -73,10 +75,11 @@ void Exporter::writeToFile(string filepath)
 
 	offsetHeader.joint = 0;
 	offsetHeader.skeletonVertex = 0;
-	offsetHeader.vertex = 0;
+	offsetHeader.vertex = 0;//dataHeader.vertices * sizeof(sVertex);
+	offsetHeader.index = 0;//dataHeader.indexes * sizeof(unsigned int);
 
-	dataHeader.datasize = sizeof(sMesh) + sizeof(sOffset) + sizeof(sHeader);
-
+	dataHeader.datasize = sizeof(sMesh) + sizeof(sOffset) + sizeof(sHeader); //mystery
+	
 	dataHeader.buffersize += sizeof(sVertex) * meshVector[0].vertexCount;
 	dataHeader.buffersize += sizeof(unsigned int) * meshVector[0].indexCount;
 	
@@ -87,7 +90,7 @@ void Exporter::writeToFile(string filepath)
 	outfile.write((const char*)&offsetHeader, sizeof(sOffset)); //main header
 	outfile.write((const char*)&meshVector[0], sizeof(sMesh));
 	outfile.write((const char*)vertexVectors[0].vertices.data(), sizeof(sVertex) * vertexVectors[0].vertices.size());
-	outfile.write((const char*)indexVectors[0].indexes.data(), sizeof(sVertex) * indexVectors[0].indexes.size());
+	outfile.write((const char*)indexVectors[0].indexes.data(), sizeof(unsigned int) * indexVectors[0].indexes.size());
 
 	//outfile.write((const char*)meshChildHolder[meshCounter].meshChildList.data(), sizeof(sMeshChild) * childMeshCount); //so this contains a index to all child meshes 
 	//outfile.write((const char*)&mMaterialList[i], sizeof(sMaterial));
