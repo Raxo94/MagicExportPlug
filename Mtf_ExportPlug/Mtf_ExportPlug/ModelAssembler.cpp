@@ -4,6 +4,7 @@ ModelAssembler::ModelAssembler()
 {
 	AssembleMeshes();
 	AssembleMaterials();
+	//fucking lamberts visas inte
 }
 
 ModelAssembler::~ModelAssembler()
@@ -13,6 +14,11 @@ ModelAssembler::~ModelAssembler()
 vector<Mesh>& ModelAssembler::GetMeshVector()
 {
 	return Meshes;
+}
+
+vector<Material>& ModelAssembler::GetMaterialVector()
+{
+	return materials;
 }
 
 void ModelAssembler::AssembleMeshes()
@@ -133,12 +139,20 @@ void ModelAssembler::AssembleMaterials()
 		MPlug outColor = materialNode.findPlug("outColor"); //to go further in the plugs
 		MPlug color = materialNode.findPlug("color"); //to get the color values
 		MPlug diffuse = materialNode.findPlug("diffuse"); //to get the diffuse of the material
+		MPlug specularColor = materialNode.findPlug("specularColor"); //to get the specular color of the material
 		
-
 		MObject data;
+		//color
 		color.getValue(data);
 		MFnNumericData nData(data);
 		nData.getData(tempMaterial.color[0], tempMaterial.color[1], tempMaterial.color[2]);
+		
+		//specular color
+		specularColor.getValue(data);
+		MFnNumericData specularData(data);
+		specularData.getData(tempMaterial.specularColor[0], tempMaterial.specularColor[1], tempMaterial.specularColor[2]);
+		
+		//diffuse
 		diffuse.getValue(tempMaterial.diffuse);
 
 		tempMaterial.hasTexture = false;

@@ -6,7 +6,7 @@ Exporter::Exporter()
 	
 	assembleMeshes = assamble->GetMeshVector();
 	prepareMeshData(assembleMeshes.at(0));
-	prepareMaterialData(assembleMeshes.at(0));
+	prepareMaterialData();
 
 
 }
@@ -67,9 +67,23 @@ void Exporter::prepareMeshData(assembleStructs::Mesh assembleMesh)
 	dataHeader.indexes = mesh.indexCount;
 }
 
-void Exporter::prepareMaterialData(assembleStructs::Mesh assembleMesh)
+void Exporter::prepareMaterialData()
 {
-	//We find the material that belongs to the mesh
+	//get the material from maya
+	//assembleStructs::Material mayaMaterial; 
+	//mayaMaterial = assamble->GetMaterialVector().at(0); 
+	//
+	//
+	//sMaterial newMaterial; // our own material
+
+	//newMaterial.ambientColor = mayaMaterial.color; //get ambientColor
+	//
+	//for (size_t i = 0; i < 3; i++) //get diffuse Color
+	//	newMaterial.diffuseColor[i] = newMaterial.ambientColor[i] * mayaMaterial.diffuse;
+	
+	
+
+
 
 }
 

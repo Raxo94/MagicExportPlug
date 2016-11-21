@@ -48,14 +48,14 @@ class Exporter
 
 	struct sMaterial
 	{
-		float ambientColor[3];
-		float diffuseColor[3];
-		float specularColor[3];
+		std::array <float, 3> ambientColor; //color values
+		std::array <float, 3> diffuseColor; //color values times diffuse
+		std::array <float, 3> specularColor;  // simply specular color
 		float shinyFactor;
 
-		char diffuseTexture[256];
-		char specularTexture[256];
-		char normalTexture[256];
+		char diffuseTexture[256]; //filepath
+		char specularTexture[256]; //filepath
+		char normalTexture[256]; //filepath
 	};
 
 	struct sDataHeader
@@ -91,8 +91,9 @@ private:
 	vector<sIndexVector> indexVectors; //this contains all indexLists;
 
 	vector<sMesh> meshVector;
+	vector<sMaterial> MaterialVector;
 	void prepareMeshData(assembleStructs::Mesh);
-	void prepareMaterialData(assembleStructs::Mesh);
+	void prepareMaterialData();
 	
 
 

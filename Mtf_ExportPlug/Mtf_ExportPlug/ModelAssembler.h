@@ -25,7 +25,8 @@ namespace assembleStructs
 		bool hasTexture;
 		char textureFilepath[256];
 		float diffuse;
-		float color[3];
+		std::array <float,3> color;
+		std::array <float, 3> specularColor;
 	};
 
 	//WorldMatrix
@@ -62,6 +63,7 @@ public:
 	~ModelAssembler();
 
 	vector<Mesh>&GetMeshVector();
+	vector<Material>&GetMaterialVector();
 
 private:
 	//Variables
