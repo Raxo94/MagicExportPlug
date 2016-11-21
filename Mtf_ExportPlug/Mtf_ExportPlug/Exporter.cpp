@@ -6,7 +6,7 @@ Exporter::Exporter()
 	
 	assembleMeshes = assamble->GetMeshVector();
 	prepareMeshData(assembleMeshes.at(0));
-
+	prepareMaterialData(assembleMeshes.at(0));
 
 
 }
@@ -65,6 +65,12 @@ void Exporter::prepareMeshData(assembleStructs::Mesh assembleMesh)
 	dataHeader.meshes++;
 	dataHeader.vertices += mesh.vertexCount;
 	dataHeader.indexes = mesh.indexCount;
+}
+
+void Exporter::prepareMaterialData(assembleStructs::Mesh assembleMesh)
+{
+	//We find the material that belongs to the mesh
+
 }
 
 void Exporter::writeToFile(string filepath)

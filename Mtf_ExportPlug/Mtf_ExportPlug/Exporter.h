@@ -92,6 +92,7 @@ private:
 
 	vector<sMesh> meshVector;
 	void prepareMeshData(assembleStructs::Mesh);
+	void prepareMaterialData(assembleStructs::Mesh);
 	
 
 

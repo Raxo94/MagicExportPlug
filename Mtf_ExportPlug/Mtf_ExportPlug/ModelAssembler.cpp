@@ -144,6 +144,7 @@ void ModelAssembler::AssembleMaterials()
 		tempMaterial.hasTexture = false;
 		
 		color.connectedTo(textureGroup, true, false, &res); //color is connected to a destination
+
 		//if the length is not 0 then we have a texture
 		for (int i = 0; i < textureGroup.length(); i++)
 		{
@@ -183,7 +184,7 @@ void ModelAssembler::AssembleMaterials()
 				}
 			}
 		}
-
+		materials.push_back(tempMaterial);
 		itDepNode.next();
 	}
 }
