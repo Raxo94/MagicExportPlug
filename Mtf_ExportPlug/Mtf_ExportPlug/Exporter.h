@@ -53,9 +53,9 @@ class Exporter
 		std::array <float, 3> specularColor;  // simply specular color
 		float shinyFactor;
 
-		char diffuseTexture[256]; //filepath
-		char specularTexture[256]; //filepath
-		char normalTexture[256]; //filepath
+		std::array<char, 256> diffuseTexture; //filepath
+		std::array<char, 256> specularTexture; //filepath
+		std::array<char, 256> normalTexture; //filepath
 	};
 
 	struct sDataHeader

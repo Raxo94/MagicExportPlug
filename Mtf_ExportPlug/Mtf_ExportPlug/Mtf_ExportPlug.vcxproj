@@ -85,8 +85,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <TargetExt>.mll</TargetExt>
-    <IncludePath>C:\Program Files\Autodesk\Maya2016\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files\Autodesk\Maya2016\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Program Files\Autodesk\Maya2016\include;C:\Program Files\Autodesk\Maya2017\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files\Autodesk\Maya2017\lib;C:\Program Files\Autodesk\Maya2016\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>

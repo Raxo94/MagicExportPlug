@@ -23,8 +23,13 @@ namespace assembleStructs
 	{
 		vector<std::array<char, 256> > boundMeshes;
 		bool hasTexture;
-		char textureFilepath[256];
+		std::array<char, 256> textureFilepath;
+		std::array<char, 256> specularFilepath;
+		std::array<char, 256> diffuseFilepath;
+		std::array<char, 256> normalFilepath;
+
 		float diffuse;
+
 		std::array <float,3> color;
 		std::array <float, 3> specularColor;
 	};
@@ -75,6 +80,8 @@ private:
 	void AssembleMeshes();
 	void AssembleSkeletalMesh();
 	void AssembleMaterials();
+
+	std::array<char, 256> GetTexture(MPlugArray);
 
 	Transform GetTransform(MFnTransform &transform);
 

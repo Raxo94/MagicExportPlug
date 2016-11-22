@@ -70,16 +70,25 @@ void Exporter::prepareMeshData(assembleStructs::Mesh assembleMesh)
 void Exporter::prepareMaterialData()
 {
 	//get the material from maya
-	//assembleStructs::Material mayaMaterial; 
-	//mayaMaterial = assamble->GetMaterialVector().at(0); 
-	//
-	//
-	//sMaterial newMaterial; // our own material
+	assembleStructs::Material mayaMaterial; 
+	mayaMaterial = assamble->GetMaterialVector().at(0); 
+	
+	
+	sMaterial newMaterial; // our own material
 
-	//newMaterial.ambientColor = mayaMaterial.color; //get ambientColor
-	//
-	//for (size_t i = 0; i < 3; i++) //get diffuse Color
-	//	newMaterial.diffuseColor[i] = newMaterial.ambientColor[i] * mayaMaterial.diffuse;
+	newMaterial.ambientColor = mayaMaterial.color;			//get ambientColor
+	newMaterial.specularColor = mayaMaterial.specularColor; //get specularColor
+
+	for (size_t i = 0; i < 3; i++) //get diffuse Color
+		newMaterial.diffuseColor[i] = newMaterial.ambientColor[i] * mayaMaterial.diffuse;
+
+	
+	//newMaterial.shinyFactor;
+	newMaterial.diffuseTexture = mayaMaterial.diffuseFilepath;
+	newMaterial.specularTexture = mayaMaterial.specularFilepath;
+	newMaterial.normalTexture = mayaMaterial.normalFilepath;
+
+
 	
 	
 

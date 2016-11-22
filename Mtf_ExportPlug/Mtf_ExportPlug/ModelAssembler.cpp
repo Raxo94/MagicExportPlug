@@ -4,7 +4,7 @@ ModelAssembler::ModelAssembler()
 {
 	AssembleMeshes();
 	AssembleMaterials();
-	//fucking lamberts visas inte
+
 }
 
 ModelAssembler::~ModelAssembler()
@@ -122,6 +122,8 @@ void ModelAssembler::AssembleSkeletalMesh()
 void ModelAssembler::AssembleMaterials()
 {
 	MItDependencyNodes itDepNode(MFn::kLambert); //Is used inorder to go trough materials
+	itDepNode.reset(MFn::kLambert); //not helping the lambert issue. We find the shading groups but not the nodes
+
 	while (itDepNode.isDone() == false)
 	{
 		std::array<char, 256> meshName;
@@ -129,9 +131,11 @@ void ModelAssembler::AssembleMaterials()
 		Material tempMaterial;
 
 		MPlugArray textureGroup;
-		MPlugArray shadingGoupArray; //our own variable
+		MPlugArray shadingGoupArray;
 		MPlugArray dagSetMemberConnections;
 		MPlugArray objInstArray;
+		MPlugArray bmpGroup;
+
 		MFnDependencyNode materialNode(mNode);
 		MString materialName = materialNode.name();
 
@@ -141,33 +145,47 @@ void ModelAssembler::AssembleMaterials()
 		MPlug diffuse = materialNode.findPlug("diffuse"); //to get the diffuse of the material
 		MPlug specularColor = materialNode.findPlug("specularColor"); //to get the specular color of the material
 		
+		//GetNormalMap plug
+		MPlug normalCamera = materialNode.findPlug("normalCamera");
+		normalCamera.connectedTo(bmpGroup, true, false, &res);
+		MFnDependencyNode bmpMap (bmpGroup[0].node());
+		MPlug bumpValue = bmpMap.findPlug("bumpValue");
+
+
+
 		MObject data;
+
 		//color
 		color.getValue(data);
 		MFnNumericData nData(data);
 		nData.getData(tempMaterial.color[0], tempMaterial.color[1], tempMaterial.color[2]);
+
+		//texture
+		color.connectedTo(textureGroup, true, false, &res); 
+		tempMaterial.textureFilepath = GetTexture(textureGroup); 
+		if (textureGroup.length() > 0) tempMaterial.hasTexture = true; 
+		else tempMaterial.hasTexture = false;
 		
 		//specular color
 		specularColor.getValue(data);
 		MFnNumericData specularData(data);
 		specularData.getData(tempMaterial.specularColor[0], tempMaterial.specularColor[1], tempMaterial.specularColor[2]);
+
+		//specular texture
+		specularColor.connectedTo(textureGroup, true, false, &res); 
+		tempMaterial.specularFilepath = GetTexture(textureGroup); 
 		
 		//diffuse
 		diffuse.getValue(tempMaterial.diffuse);
 
-		tempMaterial.hasTexture = false;
-		
-		color.connectedTo(textureGroup, true, false, &res); //color is connected to a destination
+		//diffuse Texture
+		diffuse.connectedTo(textureGroup, true, false, &res); 
+		tempMaterial.diffuseFilepath = GetTexture(textureGroup); 
 
-		//if the length is not 0 then we have a texture
-		for (int i = 0; i < textureGroup.length(); i++)
-		{
-			MFnDependencyNode textureNode(textureGroup[i].node());
-			MString filename;
-			textureNode.findPlug("fileTextureName").getValue(filename);
-			memcpy(&tempMaterial.textureFilepath, filename.asChar(), sizeof(const char[256]));
-			tempMaterial.hasTexture = true;
-		}
+		//normal Texture
+		bumpValue.connectedTo(textureGroup, true, false, &res);
+		tempMaterial.normalFilepath = GetTexture(textureGroup);
+		
 		
 		outColor.connectedTo(shadingGoupArray, false, true, &res);
 		for (int i = 0; i < shadingGoupArray.length(); i++)  //for all shading groups
@@ -201,6 +219,20 @@ void ModelAssembler::AssembleMaterials()
 		materials.push_back(tempMaterial);
 		itDepNode.next();
 	}
+}
+
+std::array<char, 256> ModelAssembler::GetTexture(MPlugArray textureGroup)
+{
+	std::array<char, 256> result = {0};
+
+	for (int i = 0; i < textureGroup.length(); i++) //this is basicaly a check if there is any texture
+	{
+		MFnDependencyNode textureNode(textureGroup[i].node());
+		MString filename;
+		textureNode.findPlug("fileTextureName").getValue(filename);
+		memcpy(&result, filename.asChar(), sizeof(const char[256]));
+	}
+	return result;
 }
 
 Transform ModelAssembler::GetTransform(MFnTransform & transform)
