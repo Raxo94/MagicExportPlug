@@ -41,6 +41,7 @@ void Exporter::prepareMeshData(assembleStructs::Mesh assembleMesh)
 
 	meshVector.push_back(mesh);
 
+
 	sVertexVector vTemp;
 	int i = 0; for each (assembleStructs::vertex vertex  in  assembleMesh.Vertices)
 	{
@@ -65,14 +66,18 @@ void Exporter::prepareMeshData(assembleStructs::Mesh assembleMesh)
 	dataHeader.meshes++;
 	dataHeader.vertices += mesh.vertexCount;
 	dataHeader.indexes = mesh.indexCount;
+
+	MainHeader.meshCount++;
 }
 
 void Exporter::prepareMaterialData()
 {
-	//get the material from maya
+	/*get the material from maya*/
+
 	assembleStructs::Material mayaMaterial; 
-	mayaMaterial = assamble->GetMaterialVector().at(0); 
-	
+
+	if( assamble->GetMaterialVector().size() >0)
+		mayaMaterial = assamble->GetMaterialVector().at(0);
 	
 	sMaterial newMaterial; // our own material
 
@@ -84,30 +89,31 @@ void Exporter::prepareMaterialData()
 
 	
 	//newMaterial.shinyFactor;
+	newMaterial.Texture = mayaMaterial.textureFilepath;
 	newMaterial.diffuseTexture = mayaMaterial.diffuseFilepath;
 	newMaterial.specularTexture = mayaMaterial.specularFilepath;
 	newMaterial.normalTexture = mayaMaterial.normalFilepath;
 
+	MaterialVector.push_back(newMaterial);
+	dataHeader.materials++; 
+	MainHeader.materialCount++;
 
 	
 	
-
-
-
 }
 
 void Exporter::writeToFile(string filepath)
 {
 
-	MainHeader.materialCount = 0;
-	MainHeader.meshCount = 1;
+	//I should copy all textures to a model folder.
+
 
 	offsetHeader.joint = 0;
 	offsetHeader.skeletonVertex = 0;
 	offsetHeader.vertex = 0;//dataHeader.vertices * sizeof(sVertex);
 	offsetHeader.index = 0;//dataHeader.indexes * sizeof(unsigned int);
 
-	dataHeader.datasize = sizeof(sMesh) + sizeof(sOffset) + sizeof(sHeader); //mystery
+	dataHeader.datasize = sizeof(sMesh) + sizeof(sOffset) + sizeof(sHeader) + sizeof(sMaterial); //this need to be multiplied by the amounts
 	
 	dataHeader.buffersize += sizeof(sVertex) * meshVector[0].vertexCount;
 	dataHeader.buffersize += sizeof(unsigned int) * meshVector[0].indexCount;
@@ -118,6 +124,7 @@ void Exporter::writeToFile(string filepath)
 	outfile.write((const char*)&MainHeader, sizeof(sHeader)); //main header
 	outfile.write((const char*)&offsetHeader, sizeof(sOffset)); //main header
 	outfile.write((const char*)&meshVector[0], sizeof(sMesh));
+	outfile.write((const char*)&MaterialVector[0], sizeof(sMaterial));
 	outfile.write((const char*)vertexVectors[0].vertices.data(), sizeof(sVertex) * vertexVectors[0].vertices.size());
 	outfile.write((const char*)indexVectors[0].indexes.data(), sizeof(unsigned int) * indexVectors[0].indexes.size());
 

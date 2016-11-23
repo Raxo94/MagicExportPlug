@@ -56,6 +56,8 @@ void ModelAssembler::AssembleMeshes()
 
 			meshNode.getTriangleOffsets(triangleCountsOffsets, triangleIndices);
 			meshNode.getVertices(vertexCounts, polygonVertexIDs); //get vertex polygon indices
+
+
 			meshNode.getNormals(normals, MSpace::kObject);
 
 			nodeVertices.resize(triangleIndices.length());
@@ -146,12 +148,15 @@ void ModelAssembler::AssembleMaterials()
 		MPlug specularColor = materialNode.findPlug("specularColor"); //to get the specular color of the material
 		
 		//GetNormalMap plug
-		MPlug normalCamera = materialNode.findPlug("normalCamera");
-		normalCamera.connectedTo(bmpGroup, true, false, &res);
-		MFnDependencyNode bmpMap (bmpGroup[0].node());
-		MPlug bumpValue = bmpMap.findPlug("bumpValue");
+		//MPlug normalCamera = materialNode.findPlug("normalCamera");
+		//normalCamera.connectedTo(bmpGroup, true, false, &res);
+		//MFnDependencyNode bmpMap (bmpGroup[0].node());
+		//MPlug bumpValue = bmpMap.findPlug("bumpValue");
 
-
+		////normal Texture
+		//bumpValue.connectedTo(textureGroup, true, false, &res);
+		//tempMaterial.normalFilepath = GetTexture(textureGroup);
+		//tempMaterial.normalFilepath = { 0 };
 
 		MObject data;
 
@@ -182,9 +187,6 @@ void ModelAssembler::AssembleMaterials()
 		diffuse.connectedTo(textureGroup, true, false, &res); 
 		tempMaterial.diffuseFilepath = GetTexture(textureGroup); 
 
-		//normal Texture
-		bumpValue.connectedTo(textureGroup, true, false, &res);
-		tempMaterial.normalFilepath = GetTexture(textureGroup);
 		
 		
 		outColor.connectedTo(shadingGoupArray, false, true, &res);

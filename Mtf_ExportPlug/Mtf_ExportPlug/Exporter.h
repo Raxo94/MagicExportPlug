@@ -5,8 +5,8 @@ class Exporter
 
 	struct sHeader
 	{
-		unsigned int meshCount;
-		unsigned int materialCount;
+		unsigned int meshCount = 0 ;
+		unsigned int materialCount = 0 ;
 	};
 
 	struct sOffset
@@ -51,8 +51,9 @@ class Exporter
 		std::array <float, 3> ambientColor; //color values
 		std::array <float, 3> diffuseColor; //color values times diffuse
 		std::array <float, 3> specularColor;  // simply specular color
-		float shinyFactor;
+		float shinyFactor = 1;
 
+		std::array<char, 256> Texture; //filepath
 		std::array<char, 256> diffuseTexture; //filepath
 		std::array<char, 256> specularTexture; //filepath
 		std::array<char, 256> normalTexture; //filepath
