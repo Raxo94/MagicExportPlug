@@ -3,6 +3,7 @@
 ModelAssembler::ModelAssembler()
 {
 	AssembleMeshes();
+	AssembleSkeletalMesh();
 	AssembleMaterials();
 
 }

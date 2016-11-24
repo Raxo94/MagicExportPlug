@@ -16,6 +16,32 @@ namespace assembleStructs
 		std::array<float, 3> nor;
 		std::array<float, 2> uv;
 	};
+
+	struct skeletonVertex
+	{
+		std::array<float, 3> pos;
+		std::array<float, 3> normal;
+		std::array<float, 2> uv;
+		
+		std::array<float, 4> influences;
+		std::array<float, 4> weights;
+	};
+
+	struct joint
+	{
+		int ID, parentID;
+		std::array<float, 3> pos, rot, scale;
+		std::array<float, 16> bindPoseInverse, globalBindPoseInverse;
+		
+		int animationStateCount;
+	};
+
+	struct Skeleton
+	{
+		vector<joint> jointVector;
+		vector<skeletonVertex> skeletalVertexVector;
+	};
+
 	//Vertex Compare Used for indexing
 	bool operator==(const assembleStructs::vertex& left, const assembleStructs::vertex& right);
 
@@ -34,8 +60,6 @@ namespace assembleStructs
 		std::array <float, 3> specularColor;
 	};
 
-	//WorldMatrix
-
 	struct Transform
 	{
 		std::array <float,3> translation;
@@ -53,10 +77,7 @@ namespace assembleStructs
 
 	};
 
-	struct Skeleton
-	{
-		int Nothing;
-	};
+	
 }//End of assembleStructs
 using namespace assembleStructs;
 
