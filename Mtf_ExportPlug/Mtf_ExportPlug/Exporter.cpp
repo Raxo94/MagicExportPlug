@@ -128,8 +128,6 @@ void Exporter::writeToFile(string filepath)
 	outfile.write((const char*)vertexVectors[0].vertices.data(), sizeof(sVertex) * vertexVectors[0].vertices.size());
 	outfile.write((const char*)indexVectors[0].indexes.data(), sizeof(unsigned int) * indexVectors[0].indexes.size());
 
-	//outfile.write((const char*)meshChildHolder[meshCounter].meshChildList.data(), sizeof(sMeshChild) * childMeshCount); //so this contains a index to all child meshes 
-	//outfile.write((const char*)&mMaterialList[i], sizeof(sMaterial));
 	outfile.close();
 	
 }

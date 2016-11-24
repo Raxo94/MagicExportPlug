@@ -148,15 +148,24 @@ void ModelAssembler::AssembleMaterials()
 		MPlug specularColor = materialNode.findPlug("specularColor"); //to get the specular color of the material
 		
 		//GetNormalMap plug
-		//MPlug normalCamera = materialNode.findPlug("normalCamera");
-		//normalCamera.connectedTo(bmpGroup, true, false, &res);
-		//MFnDependencyNode bmpMap (bmpGroup[0].node());
-		//MPlug bumpValue = bmpMap.findPlug("bumpValue");
+		try
+		{
+			MPlug normalCamera = materialNode.findPlug("normalCamera");
+			normalCamera.connectedTo(bmpGroup, true, false, &res);
+			MFnDependencyNode bmpMap(bmpGroup[0].node());
+			MPlug bumpValue = bmpMap.findPlug("bumpValue");
 
-		////normal Texture
-		//bumpValue.connectedTo(textureGroup, true, false, &res);
-		//tempMaterial.normalFilepath = GetTexture(textureGroup);
-		//tempMaterial.normalFilepath = { 0 };
+			////normal Texture
+			bumpValue.connectedTo(textureGroup, true, false, &res);
+			tempMaterial.normalFilepath = GetTexture(textureGroup);
+			//tempMaterial.normalFilepath = { 0 };
+		}
+		catch (int e)
+		{
+			cout << "An exception occurred. Exception Nr. " << e << '\n';
+			tempMaterial.normalFilepath = { 0 };
+		}
+		
 
 		MObject data;
 
