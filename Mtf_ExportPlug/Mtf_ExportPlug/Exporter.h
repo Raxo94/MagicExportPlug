@@ -59,6 +59,28 @@ class Exporter
 		std::array<char, 256> normalTexture; //filepath
 	};
 
+	struct sKeyFrame
+	{
+		float keyTime;
+		float keyTranslate[3];
+		float keyRotate[3];
+		float keyScale[3];
+	};
+
+	struct hJoint
+	{
+		int parentJointID;
+		float globalBindposeInverse[16];
+
+		int animationStateCount;
+	};
+
+	struct sJointChild
+	{
+		int parentSkeletonIndex;
+		int parentJointIndex;
+	};
+
 	struct sDataHeader
 	{
 		int datasize = 0;

@@ -2,7 +2,7 @@
 
 ModelAssembler::ModelAssembler()
 {
-	AssembleMeshes();
+	//AssembleMeshes();
 	AssembleSkeletalMesh();
 	AssembleMaterials();
 
@@ -36,7 +36,7 @@ void ModelAssembler::AssembleMeshes()
 
 			memcpy(&tempMesh.MeshName, meshNode.name().asChar(), sizeof(const char[256]));//MeshName
 
-			vector<vertex>nodeVertices;
+			vector<Vertex>nodeVertices;
 			MFloatPointArray pts;
 			MIntArray vertexCounts;
 			MIntArray polygonVertexIDs;
@@ -119,8 +119,187 @@ void ModelAssembler::AssembleMeshes()
 
 void ModelAssembler::AssembleSkeletalMesh()
 {
-	;//Nothing here
+	Skeleton skeleton;
+	MPlugArray skinClusterArray;
+
+	MItDag it(MItDag::kDepthFirst);
+
+	for (; it.isDone() == false; it.next())
+	{
+		if (it.currentItem().hasFn(MFn::kMesh))
+		{
+			//get the cluster from the mesh
+			MFnDependencyNode depNode(it.currentItem());
+			MPlug inMesh = depNode.findPlug("inMesh", &res);
+			inMesh.connectedTo(skinClusterArray, true, false, &res);
+			MFnSkinCluster skinCluster(skinClusterArray[0].node(), &res);
+			if (res == true)
+			{
+				MString name = skinCluster.name(&res);
+
+				//Get the joints
+				ProcessInverseBindpose(skinCluster,skeleton);
+				ProcessSkeletalVertex(skinCluster, skeleton);
+				ProcessKeyframes(skinCluster, skeleton);
+				//i still need animationlayers
+
+				//animationstatecount?
+
+			}
+			 
+		} //End of Mesh
+	} //End of Node
 }
+
+void ModelAssembler::ProcessInverseBindpose(MFnSkinCluster& skinCluster, Skeleton& skeleton)
+{
+	MDagPathArray jointArray;
+	skinCluster.influenceObjects(jointArray, &res);
+
+	for (size_t i = 0; i < jointArray.length(); i++)
+	{
+		MFnDependencyNode jointDep(jointArray[i].node());
+		MString jointName = jointDep.name();
+		MPlug bindPosePlug = jointDep.findPlug("bindPose", &res);
+
+		MObject data;
+		bindPosePlug.getValue(data);
+		MFnMatrixData mData(data);
+		MMatrix inverseBindPoseMatrix = mData.matrix(&res).inverse(); //this is the bindpose. It is called world matrix in plugs
+		
+
+		Joint joint;
+
+		//MMatrix transfered to Joints float[16]
+		for (size_t i = 0; i < 4; i++)
+		{
+			for (size_t j = 0; j < 4; j++)
+				joint.bindPoseInverse[(i*4 + j)] = inverseBindPoseMatrix[i][j];
+		}
+		
+	
+		//Joint plug //parents 
+		MPlug messagePlug = jointDep.findPlug("message", &res);
+		MString nameJointMessage = messagePlug.name();
+
+		MPlugArray messageArray;
+		messagePlug.connectedTo(messageArray, false, true, &res);
+
+		if (messageArray.length() > 0)
+		{
+			MPlug memberPlug(messageArray[0]);
+			MString nameMember = memberPlug.name();
+			joint.ID = memberPlug.logicalIndex(&res);
+
+			MPlugArray parentArray;
+
+
+			memberPlug.connectedTo(parentArray, false, true, &res);
+			if (parentArray.length()>0)
+			{
+				MPlug parentPlug(parentArray[0]);
+			
+				joint.parentID = parentPlug.logicalIndex(&res);
+				MString nameParent = parentPlug.name();
+			}
+
+		}
+		skeleton.jointVector.push_back(joint);
+		//globalinversebindpose?
+	}
+}
+
+void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton& skeleton)
+{
+	unsigned int geometryCount = skinCluster.numOutputConnections();
+	for (size_t i = 0; i < geometryCount; ++i)
+	{
+		unsigned int index = skinCluster.indexForOutputConnection(i, &res);
+
+		MDagPath skinPath;
+		res = skinCluster.getPathAtIndex(index, skinPath);
+
+		MItGeometry geometryIterator(skinPath, &res);
+		int vertexCount = geometryIterator.count();
+		double debugViewOfWeights[5000];
+
+		for (size_t VertexIndex = 0; geometryIterator.isDone() == false; geometryIterator.next(), VertexIndex++)
+		{
+			SkeletonVertex skeletalVertex; // to be appended
+
+			MObject comp = geometryIterator.component(&res);
+			MDoubleArray weights;
+
+			unsigned int infCount;
+			res = skinCluster.getWeights(skinPath, comp, weights, infCount);
+			weights.get(debugViewOfWeights);
+
+			for (size_t i = 0, influenceIndex = 0; i < skeleton.jointVector.size(); i++)
+			{
+				if (weights[i]>0)
+				{
+					skeletalVertex.influences[influenceIndex] = i;
+					skeletalVertex.weights[influenceIndex] = weights[i];
+					influenceIndex++;
+					if (influenceIndex >= 4) //we dont support more than 4 influences 
+					{
+						break;
+					}
+				}
+			} //End of jointCount
+
+			skeleton.skeletalVertexVector.push_back(skeletalVertex);
+		} //End of Current Geometry
+
+	}//End of ALL Geometry
+}
+
+void ModelAssembler::ProcessKeyframes(MFnSkinCluster & skinCluster, Skeleton & skeleton)
+{
+	MDagPathArray jointArray;
+	skinCluster.influenceObjects(jointArray, &res);
+
+	int var;
+	for (size_t i = 0; i < skeleton.jointVector.size(); i++)
+	{
+		MFnDependencyNode jointDep(jointArray[i].node());
+		MString jointName = jointDep.name();
+		MPlug Joint = jointDep.findPlug("translateX", &res);
+
+		//we need to find the animationLAYERS
+		sKeyFrame keframes;
+
+		keframes.keyRotate;
+		keframes.keyScale;
+		keframes.keyTime;
+		keframes.keyTranslate;
+		
+		var = 10;
+		bool exists;
+		MGlobal::executePythonCommand("var=5");
+		MGlobal::executePythonCommand("print (var)");
+		var = MGlobal::optionVarIntValue("var",&exists); //no work
+		MGlobal::executePythonCommand("var", var);
+
+
+		def start(self):
+			curr = first = pm.findKeyframe(self.sourceRootNode, which = 'first')
+			last = pm.findKeyframe(self.sourceRootNode, which = 'last')
+			
+
+
+		//executePythonCommand(const MString& command,int& result, bool displayEnabled = false, bool undoEnabled = false);
+
+
+
+		//static int			optionVarIntValue(const MString& name, bool *exists = NULL);
+		//MAnimControl;
+		//MFnAnimCurve;
+
+
+	}
+}
+
 
 void ModelAssembler::AssembleMaterials()
 {
@@ -153,13 +332,17 @@ void ModelAssembler::AssembleMaterials()
 		{
 			MPlug normalCamera = materialNode.findPlug("normalCamera");
 			normalCamera.connectedTo(bmpGroup, true, false, &res);
-			MFnDependencyNode bmpMap(bmpGroup[0].node());
-			MPlug bumpValue = bmpMap.findPlug("bumpValue");
+			if(bmpGroup.length()>0)
+			{
+				MFnDependencyNode bmpMap(bmpGroup[0].node());
+				MPlug bumpValue = bmpMap.findPlug("bumpValue");
 
-			////normal Texture
-			bumpValue.connectedTo(textureGroup, true, false, &res);
-			tempMaterial.normalFilepath = GetTexture(textureGroup);
-			//tempMaterial.normalFilepath = { 0 };
+				////normal Texture
+				bumpValue.connectedTo(textureGroup, true, false, &res);
+				tempMaterial.normalFilepath = GetTexture(textureGroup);
+				//tempMaterial.normalFilepath = { 0 };
+			}
+			
 		}
 		catch (int e)
 		{
@@ -233,6 +416,8 @@ void ModelAssembler::AssembleMaterials()
 	}
 }
 
+
+
 std::array<char, 256> ModelAssembler::GetTexture(MPlugArray textureGroup)
 {
 	std::array<char, 256> result = {0};
@@ -268,7 +453,7 @@ Transform ModelAssembler::GetTransform(MFnTransform & transform)
 }
 
 
-bool assembleStructs::operator==(const assembleStructs::vertex & left, const assembleStructs::vertex & right)
+bool assembleStructs::operator==(const assembleStructs::Vertex & left, const assembleStructs::Vertex & right)
 {
 	if (left.pos == right.pos)
 	{

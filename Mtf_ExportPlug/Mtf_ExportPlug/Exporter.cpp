@@ -43,7 +43,7 @@ void Exporter::prepareMeshData(assembleStructs::Mesh assembleMesh)
 
 
 	sVertexVector vTemp;
-	int i = 0; for each (assembleStructs::vertex vertex  in  assembleMesh.Vertices)
+	int i = 0; for each (assembleStructs::Vertex vertex  in  assembleMesh.Vertices)
 	{
 		sVertex tempVertex;
 		tempVertex.pos = vertex.pos;

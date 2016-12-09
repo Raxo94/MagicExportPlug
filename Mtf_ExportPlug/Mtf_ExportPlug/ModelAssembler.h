@@ -10,40 +10,56 @@ using namespace std;
 
 namespace assembleStructs
 {
-	struct vertex
+	struct Vertex
 	{
 		std::array<float, 3> pos;
 		std::array<float, 3> nor;
 		std::array<float, 2> uv;
 	};
 
-	struct skeletonVertex
+	struct SkeletonVertex
 	{
 		std::array<float, 3> pos;
 		std::array<float, 3> normal;
 		std::array<float, 2> uv;
 		
-		std::array<float, 4> influences;
+		std::array<int, 4> influences;
 		std::array<float, 4> weights;
 	};
 
-	struct joint
+	struct sKeyFrame
+	{
+		float keyTime;
+		float keyTranslate[3];
+		float keyRotate[3];
+		float keyScale[3];
+	};
+
+	struct sImAnimationState
+	{
+		std::vector<sKeyFrame> keyList;
+	};
+
+
+	struct Joint
 	{
 		int ID, parentID;
-		std::array<float, 3> pos, rot, scale;
+		//std::array<float, 3> pos, rot, scale;
 		std::array<float, 16> bindPoseInverse, globalBindPoseInverse;
 		
 		int animationStateCount;
+		std::vector<sImAnimationState> animationState;
+		//joints har koll på olika keyframes för olika lager
 	};
 
 	struct Skeleton
 	{
-		vector<joint> jointVector;
-		vector<skeletonVertex> skeletalVertexVector;
+		vector<Joint> jointVector;
+		vector<SkeletonVertex> skeletalVertexVector;
 	};
 
 	//Vertex Compare Used for indexing
-	bool operator==(const assembleStructs::vertex& left, const assembleStructs::vertex& right);
+	bool operator==(const assembleStructs::Vertex& left, const assembleStructs::Vertex& right);
 
 	struct Material
 	{
@@ -71,7 +87,7 @@ namespace assembleStructs
 	{
 		char MeshName[256];
 		unsigned int vertexCount;
-		vector<vertex> Vertices;
+		vector<Vertex> Vertices;
 		vector<unsigned int> indexes;
 		Transform transform;
 
@@ -101,7 +117,9 @@ private:
 	void AssembleMeshes();
 	void AssembleSkeletalMesh();
 	void AssembleMaterials();
-
+	void ProcessInverseBindpose(MFnSkinCluster&, Skeleton&);
+	void ProcessSkeletalVertex (MFnSkinCluster& skinCluster, Skeleton& skeleton);
+	void ProcessKeyframes (MFnSkinCluster& skinCluster, Skeleton& skeleton);
 	std::array<char, 256> GetTexture(MPlugArray);
 
 	Transform GetTransform(MFnTransform &transform);
