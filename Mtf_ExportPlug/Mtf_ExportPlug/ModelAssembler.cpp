@@ -140,7 +140,7 @@ void ModelAssembler::AssembleSkeletalMesh()
 				//Get the joints
 				ProcessInverseBindpose(skinCluster,skeleton);
 				ProcessSkeletalVertex(skinCluster, skeleton);
-				ProcessKeyframes(skinCluster, skeleton);
+				ProcessKeyframes2(skinCluster, skeleton);
 				//i still need animationlayers
 
 				//animationstatecount?
@@ -178,35 +178,42 @@ void ModelAssembler::ProcessInverseBindpose(MFnSkinCluster& skinCluster, Skeleto
 		}
 		
 	
-		//Joint plug //parents 
-		MPlug messagePlug = jointDep.findPlug("message", &res);
-		MString nameJointMessage = messagePlug.name();
-
-		MPlugArray messageArray;
-		messagePlug.connectedTo(messageArray, false, true, &res);
-
-		if (messageArray.length() > 0)
-		{
-			MPlug memberPlug(messageArray[0]);
-			MString nameMember = memberPlug.name();
-			joint.ID = memberPlug.logicalIndex(&res);
-
-			MPlugArray parentArray;
-
-
-			memberPlug.connectedTo(parentArray, false, true, &res);
-			if (parentArray.length()>0)
-			{
-				MPlug parentPlug(parentArray[0]);
-			
-				joint.parentID = parentPlug.logicalIndex(&res);
-				MString nameParent = parentPlug.name();
-			}
-
-		}
-		skeleton.jointVector.push_back(joint);
+		GetJointParentID(jointDep, joint);
 		//globalinversebindpose?
+		skeleton.jointVector.push_back(joint);
+		
 	}
+}
+
+void ModelAssembler::GetJointParentID(MFnDependencyNode& jointDep, Joint& joint)
+{
+	MPlug messagePlug = jointDep.findPlug("message", &res);
+	MString nameJointMessage = messagePlug.name();
+
+	MPlugArray messageArray;
+	messagePlug.connectedTo(messageArray, false, true, &res);
+
+	if (messageArray.length() > 0)
+	{
+		MPlug memberPlug(messageArray[0]);
+		MString nameMember = memberPlug.name();
+		joint.ID = memberPlug.logicalIndex(&res);
+
+		MPlugArray parentArray;
+
+
+		memberPlug.connectedTo(parentArray, false, true, &res);
+		if (parentArray.length()>0)
+		{
+			MPlug parentPlug(parentArray[0]);
+
+			joint.parentID = parentPlug.logicalIndex(&res);
+			MString nameParent = parentPlug.name();
+		}
+
+	}
+	
+	//globalinversebindpose?
 }
 
 void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton& skeleton)
@@ -254,6 +261,8 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 	}//End of ALL Geometry
 }
 
+
+
 void ModelAssembler::ProcessKeyframes(MFnSkinCluster & skinCluster, Skeleton & skeleton)
 {
 	MDagPathArray jointArray;
@@ -282,9 +291,9 @@ void ModelAssembler::ProcessKeyframes(MFnSkinCluster & skinCluster, Skeleton & s
 		MGlobal::executePythonCommand("var", var);
 
 
-		def start(self):
+		/*def start(self):
 			curr = first = pm.findKeyframe(self.sourceRootNode, which = 'first')
-			last = pm.findKeyframe(self.sourceRootNode, which = 'last')
+			last = pm.findKeyframe(self.sourceRootNode, which = 'last')*/
 			
 
 
@@ -295,9 +304,65 @@ void ModelAssembler::ProcessKeyframes(MFnSkinCluster & skinCluster, Skeleton & s
 		//static int			optionVarIntValue(const MString& name, bool *exists = NULL);
 		//MAnimControl;
 		//MFnAnimCurve;
+	}
+}
+
+void ModelAssembler::ProcessKeyframes2(MFnSkinCluster & skinCluster, Skeleton & skeleton)
+{
+	MDagPathArray jointArray;
+	skinCluster.influenceObjects(jointArray, &res);
+	if (jointArray.length() > 0)
+	{
+		MFnDependencyNode jointDep(jointArray[1].node());
+		MString jointName = jointDep.name();
+
+		MPlug joint = jointDep.findPlug("rotateX", &res);
+		MPlugArray tempArray;
+		joint.connectedTo(tempArray, false, true, &res);
+		
+		for (int i = 0; i < tempArray.length(); i++)
+		{
+			MFnDependencyNode testNode(tempArray[i].node());
+			MString testNodeName = testNode.name();
+			if (strcmp(testNodeName.asChar(), "AnimLayer1") ==0)
+			{
+				testNodeName = testNode.name();
+				MPlugArray tempArray2;
+				MPlug plug2 = testNode.findPlug("blendNodes", &res);
+				plug2.connectedTo(tempArray2, true, false, &res);
+
+				int len = tempArray2.length();
+				for (int j = 0; j < len; j++)
+				{
+					MString Name = jointDep.name();
+				}
+			}
+
+			
+		}
+
+
+
+
+
+		//MItDag it(MItDag::kDepthFirst);
+		//while (it.isDone() == false)
+		//{
+		//	if (it.currentItem().hasFn(MFn::kAnimCurve))
+		//	{
+		//		MFnDependencyNode curve(it.currentItem());
+		//		MString name = curve.name();
+		//	}
+		//	it.next();
+
+		//}
 
 
 	}
+	
+
+	
+
 }
 
 

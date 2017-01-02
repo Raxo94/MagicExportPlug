@@ -119,7 +119,9 @@ private:
 	void AssembleMaterials();
 	void ProcessInverseBindpose(MFnSkinCluster&, Skeleton&);
 	void ProcessSkeletalVertex (MFnSkinCluster& skinCluster, Skeleton& skeleton);
+	void GetJointParentID(MFnDependencyNode& jointDep,Joint& joint);
 	void ProcessKeyframes (MFnSkinCluster& skinCluster, Skeleton& skeleton);
+	void ProcessKeyframes2(MFnSkinCluster& skinCluster, Skeleton& skeleton);
 	std::array<char, 256> GetTexture(MPlugArray);
 
 	Transform GetTransform(MFnTransform &transform);
