@@ -4,9 +4,9 @@ Exporter::Exporter()
 {
 	assamble = new ModelAssembler(); // get the data
 	
-	assembleMeshes = assamble->GetMeshVector();
-	prepareMeshData(assembleMeshes.at(0));
-	prepareMaterialData();
+	//assembleMeshes = assamble->GetMeshVector();
+	//prepareMeshData(assembleMeshes.at(0));
+	//prepareMaterialData();
 
 
 }

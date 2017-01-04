@@ -4,7 +4,7 @@ ModelAssembler::ModelAssembler()
 {
 	//AssembleMeshes();
 	AssembleSkeletalMesh();
-	AssembleMaterials();
+	//AssembleMaterials();
 
 }
 
@@ -267,41 +267,55 @@ void ModelAssembler::ProcessKeyframes(MFnSkinCluster & skinCluster, Skeleton & s
 {
 	MDagPathArray jointArray;
 	skinCluster.influenceObjects(jointArray, &res);
+	//Get all animationlayers
 
-	int var;
-	for (size_t i = 0; i < skeleton.jointVector.size(); i++)
+	MGlobal::executeCommand("$ca = `animLayer -query -children \"BaseAnimation\"`;");
+	//MGlobal::executeCommand("animLayer -query -children \"BaseAnimation\";");
+	//MGlobal::executeCommand("animLayer -query -children 'BaseAnimation';");
+	MString layer = MGlobal::optionVarStringValue("$ca");
+	MGlobal::executeCommand("print ($ca);");
+
+	MGlobal::executeCommand("int $var = 5;");
+	int var = MGlobal::optionVarIntValue("$var"); //Does not work
+
+	
+	//MGlobal::executePythonCommand("print (var)");
+	//var = MGlobal::optionVarIntValue("var", &exists); //no work
+
+
+
+	MGlobal::executePythonCommand("import Keyframes as k");
+	MGlobal::executePythonCommand("k = reload(Keyframes)");
+
+	for (size_t i = 0; i < skeleton.jointVector.size(); i++) //Get all Joints
 	{
 		MFnDependencyNode jointDep(jointArray[i].node());
 		MString jointName = jointDep.name();
-		MPlug Joint = jointDep.findPlug("translateX", &res);
-
-		//we need to find the animationLayers also
-		
-		sKeyFrame keframes; //lets get the keyframes for animation layer1
-		
-		vector<string> AnimationLayers;
-		AnimationLayers.push_back("AnimLayer1");
-
-
-		MGlobal::executePythonCommand("import Keyframes as k");
-		MGlobal::executePythonCommand("k.ChangeLayer('AnimLayer3', True)");
-		MGlobal::executePythonCommand("k.GetJointKeyframes('joint15')");
-
 
 		
 		
+		
+		
+		//animLayer - edit - mute true AnimLayer4;
+		//MGlobal::executePythonCommand("keyframes = []");
+		//MGlobal::executePythonCommand("k.GetJointKeyframes('" + jointName + "' ,keyframes)");
+		//MGlobal::executePythonCommand("k.GetJointKeyframes('joint1' ,keyframes)");
+
+
+		//for key in keyframes :
+		//print(key.time)
 
 		
 		
 		
 		
 		
-		var = 10;
-		bool exists;
-		MGlobal::executePythonCommand("var=5");
-		MGlobal::executePythonCommand("print (var)");
-		var = MGlobal::optionVarIntValue("var", &exists); //no work
-		MGlobal::executePythonCommand("var", var);
+		//int var = 10;
+		//bool exists;
+		//MGlobal::executePythonCommand("var=5");
+		//MGlobal::executePythonCommand("print (var)");
+		
+		//MGlobal::executePythonCommand("var", var);
 
 	}
 
