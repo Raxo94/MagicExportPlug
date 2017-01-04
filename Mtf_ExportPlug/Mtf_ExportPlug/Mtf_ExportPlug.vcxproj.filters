@@ -19,9 +19,6 @@
     <Filter Include="Exporter">
       <UniqueIdentifier>{3b0d93c3-7236-4f0d-b961-34684bfb0373}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Trash">
-      <UniqueIdentifier>{e12bf900-5b6b-4bba-9bdf-ed389398cd50}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="maya_includes.h">
@@ -43,9 +40,6 @@
     </ClCompile>
     <ClCompile Include="Exporter.cpp">
       <Filter>Exporter</Filter>
-    </ClCompile>
-    <ClCompile Include="Source1.cpp">
-      <Filter>Source Files\Trash</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

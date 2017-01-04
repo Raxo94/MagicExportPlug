@@ -140,7 +140,7 @@ void ModelAssembler::AssembleSkeletalMesh()
 				//Get the joints
 				ProcessInverseBindpose(skinCluster,skeleton);
 				ProcessSkeletalVertex(skinCluster, skeleton);
-				ProcessKeyframes2(skinCluster, skeleton);
+				ProcessKeyframes(skinCluster, skeleton);
 				//i still need animationlayers
 
 				//animationstatecount?
@@ -275,41 +275,44 @@ void ModelAssembler::ProcessKeyframes(MFnSkinCluster & skinCluster, Skeleton & s
 		MString jointName = jointDep.name();
 		MPlug Joint = jointDep.findPlug("translateX", &res);
 
-		//we need to find the animationLAYERS
-		sKeyFrame keframes;
+		//we need to find the animationLayers also
+		
+		sKeyFrame keframes; //lets get the keyframes for animation layer1
+		
+		vector<string> AnimationLayers;
+		AnimationLayers.push_back("AnimLayer1");
 
-		keframes.keyRotate;
-		keframes.keyScale;
-		keframes.keyTime;
-		keframes.keyTranslate;
+
+		MGlobal::executePythonCommand("import Keyframes as k");
+		MGlobal::executePythonCommand("k.ChangeLayer('AnimLayer3', True)");
+		MGlobal::executePythonCommand("k.GetJointKeyframes('joint15')");
+
+
+		
+		
+
+		
+		
+		
+		
 		
 		var = 10;
 		bool exists;
 		MGlobal::executePythonCommand("var=5");
 		MGlobal::executePythonCommand("print (var)");
-		var = MGlobal::optionVarIntValue("var",&exists); //no work
+		var = MGlobal::optionVarIntValue("var", &exists); //no work
 		MGlobal::executePythonCommand("var", var);
 
-
-		/*def start(self):
-			curr = first = pm.findKeyframe(self.sourceRootNode, which = 'first')
-			last = pm.findKeyframe(self.sourceRootNode, which = 'last')*/
-			
-
-
-		//executePythonCommand(const MString& command,int& result, bool displayEnabled = false, bool undoEnabled = false);
-
-
-
-		//static int			optionVarIntValue(const MString& name, bool *exists = NULL);
-		//MAnimControl;
-		//MFnAnimCurve;
 	}
+
 }
 
 void ModelAssembler::ProcessKeyframes2(MFnSkinCluster & skinCluster, Skeleton & skeleton)
 {
 	MDagPathArray jointArray;
+	MPlugArray tempArray;
+	MPlugArray tempArray2;
+
 	skinCluster.influenceObjects(jointArray, &res);
 	if (jointArray.length() > 0)
 	{
@@ -317,18 +320,18 @@ void ModelAssembler::ProcessKeyframes2(MFnSkinCluster & skinCluster, Skeleton & 
 		MString jointName = jointDep.name();
 
 		MPlug joint = jointDep.findPlug("rotateX", &res);
-		MPlugArray tempArray;
-		joint.connectedTo(tempArray, false, true, &res);
+		joint.connectedTo(tempArray, true, true, &res);
 		
 		for (int i = 0; i < tempArray.length(); i++)
 		{
 			MFnDependencyNode testNode(tempArray[i].node());
 			MString testNodeName = testNode.name();
-			if (strcmp(testNodeName.asChar(), "AnimLayer1") ==0)
+
+			//if (strcmp(testNodeName.asChar(), "AnimLayer1") ==0)
+			if (strcmp(testNodeName.asChar(), "joint2_rotate_AnimLayer2") == 0)
 			{
-				testNodeName = testNode.name();
-				MPlugArray tempArray2;
-				MPlug plug2 = testNode.findPlug("blendNodes", &res);
+
+				MPlug plug2 = testNode.findPlug("inputAX", &res);
 				plug2.connectedTo(tempArray2, true, false, &res);
 
 				int len = tempArray2.length();
@@ -338,7 +341,6 @@ void ModelAssembler::ProcessKeyframes2(MFnSkinCluster & skinCluster, Skeleton & 
 				}
 			}
 
-			
 		}
 
 

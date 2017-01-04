@@ -27,7 +27,6 @@
     <ClCompile Include="Exporter.cpp" />
     <ClCompile Include="ModelAssembler.cpp" />
     <ClCompile Include="Source.cpp" />
-    <ClCompile Include="Source1.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{67ED3C1F-DE3D-4597-87FB-0EE1EF7C9363}</ProjectGuid>
