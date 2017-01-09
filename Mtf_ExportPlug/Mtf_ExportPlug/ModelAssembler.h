@@ -127,6 +127,8 @@ private:
 	void ProcessKeyframes2(MFnSkinCluster& skinCluster, Skeleton& skeleton);
 	std::array<char, 256> GetTexture(MPlugArray);
 
+	vector<MString> GetAnimLayers(const MString baseLayer);
+	void MuteAllLayersExcept(vector<MString>allLayers,MString ExceptLayer);
 	Transform GetTransform(MFnTransform &transform);
 
 };

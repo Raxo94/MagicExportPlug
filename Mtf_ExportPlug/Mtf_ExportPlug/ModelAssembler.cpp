@@ -269,57 +269,48 @@ void ModelAssembler::ProcessKeyframes(MFnSkinCluster & skinCluster, Skeleton & s
 	skinCluster.influenceObjects(jointArray, &res);
 	//Get all animationlayers
 
-	MGlobal::executeCommand("$ca = `animLayer -query -children \"BaseAnimation\"`;");
-	//MGlobal::executeCommand("animLayer -query -children \"BaseAnimation\";");
-	//MGlobal::executeCommand("animLayer -query -children 'BaseAnimation';");
-	MString layer = MGlobal::optionVarStringValue("$ca");
-	MGlobal::executeCommand("print ($ca);");
-
-	MGlobal::executeCommand("int $var = 5;");
-	int var = MGlobal::optionVarIntValue("$var"); //Does not work
-
+	vector<MString> animLayers = GetAnimLayers("BaseAnimation");
+	//animLayers.push_back("BaseAnimation");
 	
-	//MGlobal::executePythonCommand("print (var)");
-	//var = MGlobal::optionVarIntValue("var", &exists); //no work
+	//MGlobal::executePythonCommand("k = reload(Keyframes)");
 
 
-
-	MGlobal::executePythonCommand("import Keyframes as k");
-	MGlobal::executePythonCommand("k = reload(Keyframes)");
 
 	for (size_t i = 0; i < skeleton.jointVector.size(); i++) //Get all Joints
 	{
-		MFnDependencyNode jointDep(jointArray[i].node());
-		MString jointName = jointDep.name();
 
-		
-		
-		
-		
-		//animLayer - edit - mute true AnimLayer4;
-		//MGlobal::executePythonCommand("keyframes = []");
-		//MGlobal::executePythonCommand("k.GetJointKeyframes('" + jointName + "' ,keyframes)");
-		//MGlobal::executePythonCommand("k.GetJointKeyframes('joint1' ,keyframes)");
+		for (MString layer : animLayers)
+		{
+			MuteAllLayersExcept(animLayers, layer);
+ 			sImAnimationState animation;
+
+			//MGlobal::executePythonCommand("import Keyframes as k");
+
+			MFnDependencyNode jointDep(jointArray[i].node());
+			MString jointName = jointDep.name();
+			MGlobal::executePythonCommand("keyframes = []");
+			MGlobal::executePythonCommand("k.GetJointKeyframes(\"" + jointName + " \", keyframes)");
+			//Nu måste jag spara datan
+			MString amountOfKeyframes = MGlobal::executePythonCommandStringResult("len(keyframes)");
+			
+			for (int keyIndex = 0; keyIndex < amountOfKeyframes.asInt(); i++)
+			{
+				MString keyIndexStringed; keyIndexStringed = keyIndex;
+				sKeyFrame keyframe;
+
+				MString time = MGlobal::executePythonCommandStringResult("keyframes["+ keyIndexStringed +"].time");
+
+			}
 
 
-		//for key in keyframes :
-		//print(key.time)
+			
 
-		
-		
-		
-		
-		
-		//int var = 10;
-		//bool exists;
-		//MGlobal::executePythonCommand("var=5");
-		//MGlobal::executePythonCommand("print (var)");
-		
-		//MGlobal::executePythonCommand("var", var);
-
+		}
 	}
 
 }
+
+
 
 void ModelAssembler::ProcessKeyframes2(MFnSkinCluster & skinCluster, Skeleton & skeleton)
 {
@@ -512,6 +503,49 @@ std::array<char, 256> ModelAssembler::GetTexture(MPlugArray textureGroup)
 	}
 	return result;
 }
+
+vector<MString> ModelAssembler::GetAnimLayers(const MString baseLayer)
+{
+	MStatus res;
+	//MString t0 = MGlobal::executeCommandStringResult("6 + 6;", true,res);
+	MString t1 = MGlobal::executeCommandStringResult("$asd = 5+5;",res);
+	//MString t2 = MGlobal::executeCommandStringResult("6;", true,res);
+	//MString t3 = MGlobal::executeCommandStringResult("6", true,res);
+	MString t4 = MGlobal::executeCommandStringResult("$BRA = 6;", true,res);
+
+	//MString t5 = MGlobal::executeCommandStringResult("$BRA;", true,res);
+
+	MString p1 = MGlobal::executePythonCommandStringResult("BRA = 5 + 5", true,res);
+
+
+	MString cmd = "$Layers = `animLayer -query -children \"" + baseLayer + "\"`;";
+	MString whynt = MGlobal::executeCommandStringResult(cmd);
+	MString LayerCount = MGlobal::executeCommandStringResult("$asd = size($Layers);");
+
+
+	vector<MString> Layers;
+	for (int i = 0; i < LayerCount.asInt(); i++)
+	{
+		MString index; index += i;
+		MString temp = MGlobal::executeCommandStringResult("$asd = $Layers[" + index + "]");
+		Layers.push_back(temp);
+	}
+
+	return Layers;
+}
+
+void ModelAssembler::MuteAllLayersExcept(vector<MString> allLayers, MString ExceptLayer)
+{
+	for (MString layer : allLayers)
+	{
+		MGlobal::executeCommand("animLayer - edit - mute true " + layer + ";");
+		MGlobal::executeCommand("animLayerEditorOnSelect \"" + layer +"\" 0;");
+	}
+
+	MGlobal::executeCommand("animLayer - edit - mute false " + ExceptLayer + ";");
+	MGlobal::executeCommand("animLayerEditorOnSelect \"" + ExceptLayer + "\" 1;");
+}
+
 
 Transform ModelAssembler::GetTransform(MFnTransform & transform)
 
