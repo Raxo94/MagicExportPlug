@@ -39,6 +39,7 @@
 #include <maya/MFnMessageAttribute.h>
 #include <maya/MAnimControl.h>
 #include <maya/MFnAnimCurve.h>
+#include <maya/Mquaternion.h>
 
 #include <vector>
 

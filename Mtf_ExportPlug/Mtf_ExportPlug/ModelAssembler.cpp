@@ -123,7 +123,7 @@ void ModelAssembler::AssembleSkeletalMesh()
 	MPlugArray skinClusterArray;
 
 	MItDag it(MItDag::kDepthFirst);
-
+	//check against skinClusters
 	for (; it.isDone() == false; it.next())
 	{
 		if (it.currentItem().hasFn(MFn::kMesh))
@@ -139,11 +139,8 @@ void ModelAssembler::AssembleSkeletalMesh()
 
 				//Get the joints
 				ProcessInverseBindpose(skinCluster,skeleton);
-				ProcessSkeletalVertex(skinCluster, skeleton);
+				ProcessSkeletalVertex(skinCluster, skeleton); //this is not done
 				ProcessKeyframes(skinCluster, skeleton);
-				//i still need animationlayers
-
-				//animationstatecount?
 
 			}
 			 
@@ -158,17 +155,15 @@ void ModelAssembler::ProcessInverseBindpose(MFnSkinCluster& skinCluster, Skeleto
 
 	for (size_t i = 0; i < jointArray.length(); i++)
 	{
+		Joint joint;
 		MFnDependencyNode jointDep(jointArray[i].node());
-		MString jointName = jointDep.name();
+		joint.name = jointDep.name();
 		MPlug bindPosePlug = jointDep.findPlug("bindPose", &res);
 
 		MObject data;
 		bindPosePlug.getValue(data);
 		MFnMatrixData mData(data);
 		MMatrix inverseBindPoseMatrix = mData.matrix(&res).inverse(); //this is the bindpose. It is called world matrix in plugs
-		
-
-		Joint joint;
 
 		//MMatrix transfered to Joints float[16]
 		for (size_t i = 0; i < 4; i++)
@@ -269,106 +264,65 @@ void ModelAssembler::ProcessKeyframes(MFnSkinCluster & skinCluster, Skeleton & s
 	skinCluster.influenceObjects(jointArray, &res);
 	//Get all animationlayers
 
+	//pymel will be used
+	MGlobal::executePythonCommandStringResult("import maya.mel as mel", true, true);
+	MGlobal::executePythonCommand("import Keyframes as k");
+	MGlobal::executePythonCommand("k = reload(Keyframes)");
+
+
 	vector<MString> animLayers = GetAnimLayers("BaseAnimation");
-	//animLayers.push_back("BaseAnimation");
-	
-	//MGlobal::executePythonCommand("k = reload(Keyframes)");
-
-
-
-	for (size_t i = 0; i < skeleton.jointVector.size(); i++) //Get all Joints
+	sImAnimationState keyList;
+	for (Joint joint : skeleton.jointVector)
 	{
+		joint.animationStateCount = animLayers.size();
 
 		for (MString layer : animLayers)
 		{
 			MuteAllLayersExcept(animLayers, layer);
- 			sImAnimationState animation;
-
-			//MGlobal::executePythonCommand("import Keyframes as k");
-
-			MFnDependencyNode jointDep(jointArray[i].node());
-			MString jointName = jointDep.name();
 			MGlobal::executePythonCommand("keyframes = []");
-			MGlobal::executePythonCommand("k.GetJointKeyframes(\"" + jointName + " \", keyframes)");
-			//Nu måste jag spara datan
+			MGlobal::executePythonCommand("k.GetJointKeyframes(\"" + joint.name + " \", keyframes)");
 			MString amountOfKeyframes = MGlobal::executePythonCommandStringResult("len(keyframes)");
 			
-			for (int keyIndex = 0; keyIndex < amountOfKeyframes.asInt(); i++)
+			for (int keyIndex = 0; keyIndex < amountOfKeyframes.asInt(); keyIndex++)
 			{
 				MString keyIndexStringed; keyIndexStringed = keyIndex;
 				sKeyFrame keyframe;
 
-				MString time = MGlobal::executePythonCommandStringResult("keyframes["+ keyIndexStringed +"].time");
+				MString time = MGlobal::executePythonCommandStringResult("keyframes[" + keyIndexStringed + "].time");
 
+				MString scaleX = MGlobal::executePythonCommandStringResult("keyframes[" + keyIndexStringed + "].scale[0]");
+				MString scaleY = MGlobal::executePythonCommandStringResult("keyframes[" + keyIndexStringed + "].scale[1]");
+				MString scaleZ = MGlobal::executePythonCommandStringResult("keyframes[" + keyIndexStringed + "].scale[2]");
+
+				MString translateX = MGlobal::executePythonCommandStringResult("keyframes[" + keyIndexStringed + "].translate[0]");
+				MString translateY = MGlobal::executePythonCommandStringResult("keyframes[" + keyIndexStringed + "].translate[1]");
+				MString translateZ = MGlobal::executePythonCommandStringResult("keyframes[" + keyIndexStringed + "].translate[2]");
+
+				MString rotationX = MGlobal::executePythonCommandStringResult("keyframes[" + keyIndexStringed + "].rotation[0]");
+				MString rotationY = MGlobal::executePythonCommandStringResult("keyframes[" + keyIndexStringed + "].rotation[1]");
+				MString rotationZ = MGlobal::executePythonCommandStringResult("keyframes[" + keyIndexStringed + "].rotation[2]");
+				MEulerRotation rotation(rotationX.asDouble(), rotationY.asDouble(), rotationZ.asDouble());
+				MQuaternion quaternion = rotation.asQuaternion();
+
+				keyframe.keyTime = time.asInt();
+				keyframe.keyScale[0] = scaleX.asDouble();
+				keyframe.keyScale[1] = scaleY.asDouble();
+				keyframe.keyScale[2] = scaleZ.asDouble();
+				keyframe.keyTranslate[0] = translateX.asDouble();
+				keyframe.keyTranslate[1] = translateY.asDouble();
+				keyframe.keyTranslate[2] = translateZ.asDouble();
+
+				keyframe.keyRotate[0] = quaternion.w;
+				keyframe.keyRotate[1] = quaternion.x;
+				keyframe.keyRotate[2] = quaternion.y;
+				keyframe.keyRotate[3] = quaternion.z;
+
+				keyList.keyList.push_back(keyframe);
 			}
-
-
-			
+			joint.animationState.push_back(keyList);
 
 		}
 	}
-
-}
-
-
-
-void ModelAssembler::ProcessKeyframes2(MFnSkinCluster & skinCluster, Skeleton & skeleton)
-{
-	MDagPathArray jointArray;
-	MPlugArray tempArray;
-	MPlugArray tempArray2;
-
-	skinCluster.influenceObjects(jointArray, &res);
-	if (jointArray.length() > 0)
-	{
-		MFnDependencyNode jointDep(jointArray[1].node());
-		MString jointName = jointDep.name();
-
-		MPlug joint = jointDep.findPlug("rotateX", &res);
-		joint.connectedTo(tempArray, true, true, &res);
-		
-		for (int i = 0; i < tempArray.length(); i++)
-		{
-			MFnDependencyNode testNode(tempArray[i].node());
-			MString testNodeName = testNode.name();
-
-			//if (strcmp(testNodeName.asChar(), "AnimLayer1") ==0)
-			if (strcmp(testNodeName.asChar(), "joint2_rotate_AnimLayer2") == 0)
-			{
-
-				MPlug plug2 = testNode.findPlug("inputAX", &res);
-				plug2.connectedTo(tempArray2, true, false, &res);
-
-				int len = tempArray2.length();
-				for (int j = 0; j < len; j++)
-				{
-					MString Name = jointDep.name();
-				}
-			}
-
-		}
-
-
-
-
-
-		//MItDag it(MItDag::kDepthFirst);
-		//while (it.isDone() == false)
-		//{
-		//	if (it.currentItem().hasFn(MFn::kAnimCurve))
-		//	{
-		//		MFnDependencyNode curve(it.currentItem());
-		//		MString name = curve.name();
-		//	}
-		//	it.next();
-
-		//}
-
-
-	}
-	
-
-	
 
 }
 
@@ -507,31 +461,22 @@ std::array<char, 256> ModelAssembler::GetTexture(MPlugArray textureGroup)
 vector<MString> ModelAssembler::GetAnimLayers(const MString baseLayer)
 {
 	MStatus res;
-	//MString t0 = MGlobal::executeCommandStringResult("6 + 6;", true,res);
-	MString t1 = MGlobal::executeCommandStringResult("$asd = 5+5;",res);
-	//MString t2 = MGlobal::executeCommandStringResult("6;", true,res);
-	//MString t3 = MGlobal::executeCommandStringResult("6", true,res);
-	MString t4 = MGlobal::executeCommandStringResult("$BRA = 6;", true,res);
 
-	//MString t5 = MGlobal::executeCommandStringResult("$BRA;", true,res);
-
-	MString p1 = MGlobal::executePythonCommandStringResult("BRA = 5 + 5", true,res);
-
-
-	MString cmd = "$Layers = `animLayer -query -children \"" + baseLayer + "\"`;";
-	MString whynt = MGlobal::executeCommandStringResult(cmd);
-	MString LayerCount = MGlobal::executeCommandStringResult("$asd = size($Layers);");
-
+	MGlobal::executePythonCommand("LayersO = mel.eval('animLayer - query - children \"BaseAnimation\";')", true, true);
+	MString animationLayerCount = MGlobal::executePythonCommandStringResult("len(LayersO)", true, true, &res);
 
 	vector<MString> Layers;
-	for (int i = 0; i < LayerCount.asInt(); i++)
+	for (int i = 0; i < animationLayerCount.asInt(); i++)
 	{
 		MString index; index += i;
-		MString temp = MGlobal::executeCommandStringResult("$asd = $Layers[" + index + "]");
+		MString temp = MGlobal::executePythonCommandStringResult("LayersO["+ index +"]");
 		Layers.push_back(temp);
 	}
-
+	
 	return Layers;
+	
+
+	
 }
 
 void ModelAssembler::MuteAllLayersExcept(vector<MString> allLayers, MString ExceptLayer)

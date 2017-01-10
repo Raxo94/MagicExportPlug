@@ -34,7 +34,7 @@ namespace assembleStructs
 	{
 		float keyTime;
 		float keyTranslate[3];
-		float keyRotate[3];
+		float keyRotate[4];
 		float keyScale[3];
 	};
 
@@ -49,7 +49,7 @@ namespace assembleStructs
 		int ID, parentID;
 		//std::array<float, 3> pos, rot, scale;
 		std::array<float, 16> bindPoseInverse, globalBindPoseInverse;
-		
+		MString name;
 		int animationStateCount;
 		std::vector<sImAnimationState> animationState;
 		//joints har koll på olika keyframes för olika lager
