@@ -165,11 +165,13 @@ void ModelAssembler::ProcessInverseBindpose(MFnSkinCluster& skinCluster, Skeleto
 		MFnMatrixData mData(data);
 		MMatrix inverseBindPoseMatrix = mData.matrix(&res).inverse(); //this is the bindpose. It is called world matrix in plugs
 
-		//MMatrix transfered to Joints float[16]
-		for (size_t i = 0; i < 4; i++)
+		
+		for (size_t i = 0; i < 4; i++) //MMatrix transfered to Joints float[16]
 		{
 			for (size_t j = 0; j < 4; j++)
-				joint.bindPoseInverse[(i*4 + j)] = inverseBindPoseMatrix[i][j];
+			{
+				joint.bindPoseInverse[(i * 4 + j)] = inverseBindPoseMatrix[i][j];
+			}
 		}
 		
 	
@@ -220,35 +222,100 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 
 		MDagPath skinPath;
 		res = skinCluster.getPathAtIndex(index, skinPath);
+		MFnDependencyNode meshnode(skinPath.node());
+		MString name = meshnode.name(); // we have the mesh name! how are we going to get the transform;
+
 
 		MItGeometry geometryIterator(skinPath, &res);
 		int vertexCount = geometryIterator.count();
-		double debugViewOfWeights[5000];
 
+		/////
+		//MFnMesh meshNode(skinPath.node()); //the meshNode
+		//Mesh tempMesh;
+
+		//vector<Vertex>nodeVertices;
+		//MFloatPointArray pts;
+		//MIntArray vertexCounts;
+		//MIntArray polygonVertexIDs;
+		//MFloatArray u, v;
+		//MIntArray uvCounts;
+		//MIntArray uvIDs;
+		//MFloatVectorArray normals;
+		//MIntArray triangleCountsOffsets;
+		//MIntArray triangleIndices;
+		//MIntArray triangleCounts;
+		//MIntArray triangleVertexIDs;
+		//MVector vertexNormal;
+		//MIntArray normalList, normalCount;
+
+		//meshNode.getPoints(pts, MSpace::kObject);
+		//meshNode.getUVs(u, v, 0);
+		//meshNode.getAssignedUVs(uvCounts, uvIDs); //indices for UV:s
+
+		//meshNode.getTriangleOffsets(triangleCountsOffsets, triangleIndices);
+		//meshNode.getVertices(vertexCounts, polygonVertexIDs); //get vertex polygon indices
+
+
+		//meshNode.getNormals(normals, MSpace::kObject);
+		//nodeVertices.resize(triangleIndices.length());
+		//meshNode.getNormalIds(normalCount, normalList);
+
+
+		//for (unsigned int i = 0; i < triangleIndices.length(); i++)
+		//{ //for each triangle index (36)
+
+		//	nodeVertices.at(i).pos[0] = pts[polygonVertexIDs[triangleIndices[i]]].x;
+		//	nodeVertices.at(i).pos[1] = pts[polygonVertexIDs[triangleIndices[i]]].y;
+		//	nodeVertices.at(i).pos[2] = pts[polygonVertexIDs[triangleIndices[i]]].z;
+
+		//	nodeVertices.at(i).nor[0] = normals[normalList[triangleIndices[i]]].x;
+		//	nodeVertices.at(i).nor[1] = normals[normalList[triangleIndices[i]]].y;
+		//	nodeVertices.at(i).nor[2] = normals[normalList[triangleIndices[i]]].z;
+
+		//	nodeVertices.at(i).uv[0] = u[uvIDs[triangleIndices[i]]];
+		//	nodeVertices.at(i).uv[1] = v[uvIDs[triangleIndices[i]]];
+		//}
+
+		////
 		for (size_t VertexIndex = 0; geometryIterator.isDone() == false; geometryIterator.next(), VertexIndex++)
 		{
+			//vertex
+			MFnDependencyNode node(geometryIterator.currentItem());
+ 			MString name = node.name();
+
 			SkeletonVertex skeletalVertex; // to be appended
 
-			MObject comp = geometryIterator.component(&res);
+			MObject comp = geometryIterator.component(&res); // är det möjligt att ändra så att komponent är vertex punkten.
 			MDoubleArray weights;
-
 			unsigned int infCount;
-			res = skinCluster.getWeights(skinPath, comp, weights, infCount);
-			weights.get(debugViewOfWeights);
 
+
+
+			res = skinCluster.getWeights(skinPath, comp, weights, infCount);
+		
+
+			//see if the joint affect the vertex
 			for (size_t i = 0, influenceIndex = 0; i < skeleton.jointVector.size(); i++)
-			{
+			{ //vad är det här? är det möjligen vertex punkter?
 				if (weights[i]>0)
 				{
 					skeletalVertex.influences[influenceIndex] = i;
 					skeletalVertex.weights[influenceIndex] = weights[i];
 					influenceIndex++;
-					if (influenceIndex >= 4) //we dont support more than 4 influences 
+					if (influenceIndex >= 4) //Currently dont support only 4 influences 
 					{
 						break;
 					}
+					//skulle jag kunna få ut dess triangle index??
+					//Så basicaly vi går igenom alla vertex punkter-
+					//För alla vertex punkter går vi igenom joints.
+					//om jointen har en vikt på vertex punkten så lägger vi in en referens till jointen
+					//om jointen har en vikt på vertex punkten så lägger vi in jointens vikt in i vertexen.
 				}
-			} //End of jointCount
+			}
+
+			//lets get vertexdata
+
 
 			skeleton.skeletalVertexVector.push_back(skeletalVertex);
 		} //End of Current Geometry
@@ -274,8 +341,8 @@ void ModelAssembler::ProcessKeyframes(MFnSkinCluster & skinCluster, Skeleton & s
 	sImAnimationState keyList;
 	for (Joint joint : skeleton.jointVector)
 	{
-		joint.animationStateCount = animLayers.size();
 
+		joint.animationStateCount = animLayers.size();
 		for (MString layer : animLayers)
 		{
 			MuteAllLayersExcept(animLayers, layer);
@@ -462,14 +529,14 @@ vector<MString> ModelAssembler::GetAnimLayers(const MString baseLayer)
 {
 	MStatus res;
 
-	MGlobal::executePythonCommand("LayersO = mel.eval('animLayer - query - children \"BaseAnimation\";')", true, true);
-	MString animationLayerCount = MGlobal::executePythonCommandStringResult("len(LayersO)", true, true, &res);
+	MGlobal::executePythonCommand("Layers = mel.eval('animLayer - query - children \"BaseAnimation\";')", true, true);
+	MString animationLayerCount = MGlobal::executePythonCommandStringResult("len(Layers)", true, true, &res);
 
 	vector<MString> Layers;
 	for (int i = 0; i < animationLayerCount.asInt(); i++)
 	{
 		MString index; index += i;
-		MString temp = MGlobal::executePythonCommandStringResult("LayersO["+ index +"]");
+		MString temp = MGlobal::executePythonCommandStringResult("Layers["+ index +"]");
 		Layers.push_back(temp);
 	}
 	

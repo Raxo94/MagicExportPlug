@@ -124,7 +124,6 @@ private:
 	void ProcessSkeletalVertex (MFnSkinCluster& skinCluster, Skeleton& skeleton);
 	void GetJointParentID(MFnDependencyNode& jointDep,Joint& joint);
 	void ProcessKeyframes (MFnSkinCluster& skinCluster, Skeleton& skeleton);
-	void ProcessKeyframes2(MFnSkinCluster& skinCluster, Skeleton& skeleton);
 	std::array<char, 256> GetTexture(MPlugArray);
 
 	vector<MString> GetAnimLayers(const MString baseLayer);

@@ -41,5 +41,8 @@
     <ClCompile Include="Exporter.cpp">
       <Filter>Exporter</Filter>
     </ClCompile>
+    <ClCompile Include="TRASH.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
