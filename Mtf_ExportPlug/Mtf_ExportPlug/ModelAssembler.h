@@ -131,7 +131,7 @@ private:
 	void ProcessInverseBindpose(MFnSkinCluster&, Skeleton&);
 	void ProcessSkeletalVertex (MFnSkinCluster& skinCluster, Skeleton& skeleton);
 	void GetJointParentID(MFnDependencyNode& jointDep,Joint& joint);
-	vector<vertexDeform> GetskinWeights(MDagPath skinPath, MFnSkinCluster& skinCluster, vector<Joint>joints);
+	vector<vertexDeform> GetSkinWeights(MDagPath skinPath, MFnSkinCluster& skinCluster, vector<Joint>joints);
 	void ProcessKeyframes (MFnSkinCluster& skinCluster, Skeleton& skeleton);
 	std::array<char, 256> GetTexture(MPlugArray);
 	

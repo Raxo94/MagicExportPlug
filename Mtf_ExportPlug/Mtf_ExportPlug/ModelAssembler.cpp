@@ -208,7 +208,7 @@ void ModelAssembler::GetJointParentID(MFnDependencyNode& jointDep, Joint& joint)
 	//globalinversebindpose?
 }
 
-vector<vertexDeform> ModelAssembler::GetskinWeights(MDagPath skinPath,MFnSkinCluster& skinCluster, vector<Joint>joints)
+vector<vertexDeform> ModelAssembler::GetSkinWeights(MDagPath skinPath,MFnSkinCluster& skinCluster, vector<Joint>joints)
 {
 	vector<vertexDeform> vertexDeformVector;
 	MItGeometry geometryIterator(skinPath, &res);
@@ -220,9 +220,10 @@ vector<vertexDeform> ModelAssembler::GetskinWeights(MDagPath skinPath,MFnSkinClu
 		unsigned int infCount;
 		res = skinCluster.getWeights(skinPath, comp, weights, infCount);
 
+		vertexDeform deform;
 		for (size_t i = 0, influenceIndex = 0; i < joints.size(); i++)
 		{
-			vertexDeform deform;
+			
 			if (weights[i] > 0)
 			{
 				deform.influences[influenceIndex] = i;
@@ -234,8 +235,8 @@ vector<vertexDeform> ModelAssembler::GetskinWeights(MDagPath skinPath,MFnSkinClu
 				}
 
 			}
-			vertexDeformVector.push_back(deform);
 		}
+		vertexDeformVector.push_back(deform);
 
 	}// This gives a list of indexes. We probably can use this with the vertexes that give position.
 	return vertexDeformVector;
@@ -259,7 +260,7 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 		MString name = meshnode.name(); //for debuging purposes
 
 		//weights
-		vector<vertexDeform>VertexDeformVector = GetskinWeights(skinPath, skinCluster, skeleton.jointVector);
+		vector<vertexDeform>VertexDeformVector = GetSkinWeights(skinPath, skinCluster, skeleton.jointVector);
 
 		//Positions Normals UVs.
 		vector<SkeletonVertex>nodeVertices;
@@ -311,8 +312,6 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 		for (unsigned int i = 0; i < triangleIndices.length(); i++)
 		{ 
 
-
-
 			int JAG = polygonVertexIDs[triangleIndices[i]];
 
 			nodeVertices.at(i).pos[0] = pts[polygonVertexIDs[triangleIndices[i]]].x;
@@ -328,7 +327,6 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 
 			nodeVertices.at(i).deformer = VertexDeformVector[ polygonVertexIDs[ triangleIndices[i]]];
 			//Vi kollar till vilken vertex trianglen pekar på och hämtar den vikten
-
 		}
 
 		skeleton.skeletalVertexVector = nodeVertices; //so far im only planing on having one list per skeleton.
