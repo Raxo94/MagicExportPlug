@@ -92,3 +92,30 @@
 //		it.next();
 //	}//Loop END 
 //}
+
+
+
+
+
+
+
+
+/*SkeletonVertex vertex;
+int UVCount; res = VertexData.numUVs(UVCount);
+MPoint position = VertexData.position();
+MVector normal; res = VertexData.getNormal(normal);
+float2 UV; res = VertexData.getUV(UV);
+
+for (size_t i = 0; i < 3; i++)
+{
+vertex.pos[i] = position[i];
+vertex.normal[i] = normal[i];
+}
+
+for (size_t i = 0; i < 2; i++)
+vertex.uv[i] = UV[i];
+*/
+
+
+
+//Get weights

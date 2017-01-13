@@ -13,6 +13,13 @@ using namespace std;
 
 namespace assembleStructs
 {
+	struct vertexDeform
+	{
+		std::array<int, 4> influences;
+		std::array<float, 4> weights;
+	};
+
+
 	struct Vertex
 	{
 		std::array<float, 3> pos;
@@ -26,8 +33,7 @@ namespace assembleStructs
 		std::array<float, 3> normal;
 		std::array<float, 2> uv;
 		
-		std::array<int, 4> influences;
-		std::array<float, 4> weights;
+		vertexDeform deformer;
 	};
 
 	struct sKeyFrame
@@ -43,7 +49,7 @@ namespace assembleStructs
 		std::vector<sKeyFrame> keyList;
 	};
 
-
+	
 	struct Joint
 	{
 		int ID, parentID;
@@ -97,6 +103,8 @@ namespace assembleStructs
 	};
 
 	
+
+	
 }//End of assembleStructs
 using namespace assembleStructs;
 
@@ -123,9 +131,11 @@ private:
 	void ProcessInverseBindpose(MFnSkinCluster&, Skeleton&);
 	void ProcessSkeletalVertex (MFnSkinCluster& skinCluster, Skeleton& skeleton);
 	void GetJointParentID(MFnDependencyNode& jointDep,Joint& joint);
+	vector<vertexDeform> GetskinWeights(MDagPath skinPath, MFnSkinCluster& skinCluster, vector<Joint>joints);
 	void ProcessKeyframes (MFnSkinCluster& skinCluster, Skeleton& skeleton);
 	std::array<char, 256> GetTexture(MPlugArray);
-
+	
+	
 	vector<MString> GetAnimLayers(const MString baseLayer);
 	void MuteAllLayersExcept(vector<MString>allLayers,MString ExceptLayer);
 	Transform GetTransform(MFnTransform &transform);

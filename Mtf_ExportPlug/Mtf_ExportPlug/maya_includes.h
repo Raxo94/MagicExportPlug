@@ -40,6 +40,7 @@
 #include <maya/MAnimControl.h>
 #include <maya/MFnAnimCurve.h>
 #include <maya/Mquaternion.h>
+#include <maya/MItMeshVertex.h>
 
 #include <vector>
 
