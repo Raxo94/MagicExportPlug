@@ -99,7 +99,8 @@ public:
 	Exporter();
 	~Exporter();
 
-	void writeToFile(string filepath);
+	void writeModelsToFile(string outFilePath);
+	void writeMaterialsToFile(string outFilePath);
 	
 
 private:

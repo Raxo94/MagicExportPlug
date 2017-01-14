@@ -20,7 +20,13 @@ EXPORT MStatus initializePlugin(MObject obj)
 	}
 
 	Exporter Export;
-	//Export.writeToFile("C:/Project_Erebus/Erebus/Models/TESTMODEL.mtf");
+	string outfileMesh = "C:/Project_Erebus/Erebus/Models/PlugTest.model";
+	//put a for loop going trough every material in export
+	string outfileModel = "C:/Project_Erebus/Erebus/Models/PlugTest.material";
+
+	Export.writeModelsToFile(outfileMesh);
+	Export.writeMaterialsToFile(outfileModel);
+
 
 	MGlobal::displayInfo("Maya plugin loaded!");
 	return MS::kSuccess;

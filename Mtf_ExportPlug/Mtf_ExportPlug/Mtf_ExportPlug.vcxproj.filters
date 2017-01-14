@@ -25,10 +25,10 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Exporter.h">
-      <Filter>Exporter</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ModelAssembler.h">
-      <Filter>Assembler</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -38,11 +38,11 @@
     <ClCompile Include="ModelAssembler.cpp">
       <Filter>Assembler</Filter>
     </ClCompile>
-    <ClCompile Include="Exporter.cpp">
-      <Filter>Exporter</Filter>
-    </ClCompile>
     <ClCompile Include="TRASH.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Exporter.cpp">
+      <Filter>Assembler</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

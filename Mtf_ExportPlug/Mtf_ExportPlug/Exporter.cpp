@@ -4,9 +4,13 @@ Exporter::Exporter()
 {
 	assamble = new ModelAssembler(); // get the data
 	
-	//assembleMeshes = assamble->GetMeshVector();
-	//prepareMeshData(assembleMeshes.at(0));
-	//prepareMaterialData();
+	assembleMeshes = assamble->GetMeshVector();
+	if (assembleMeshes.size() > 0)
+	{
+		prepareMeshData(assembleMeshes.at(0)); //problemet ligger i att det inte finns en mesh
+	}
+
+	prepareMaterialData();
 
 
 }
@@ -16,12 +20,42 @@ Exporter::~Exporter()
 	delete assamble;
 }
 
+void Exporter::writeModelsToFile(string outFilePath)
+{
+
+	//I should copy all textures to a model folder.
+
+
+	offsetHeader.joint = 0;
+	offsetHeader.skeletonVertex = 0;
+	offsetHeader.vertex = 0;//dataHeader.vertices * sizeof(sVertex);
+	offsetHeader.index = 0;//dataHeader.indexes * sizeof(unsigned int);
+
+	dataHeader.datasize = sizeof(sMesh) + sizeof(sOffset) + sizeof(sHeader) + sizeof(sMaterial); //this need to be multiplied by the amounts
+
+	dataHeader.buffersize += sizeof(sVertex) * meshVector[0].vertexCount;
+	dataHeader.buffersize += sizeof(unsigned int) * meshVector[0].indexCount;
+
+	std::ofstream outfile(filepath, std::ofstream::binary); //output file stream
+
+	outfile.write((const char*)&dataHeader, sizeof(sDataHeader)); //main header
+	outfile.write((const char*)&MainHeader, sizeof(sHeader)); //main header
+	outfile.write((const char*)&offsetHeader, sizeof(sOffset)); //main header
+	outfile.write((const char*)&meshVector[0], sizeof(sMesh));
+	outfile.write((const char*)&MaterialVector[0], sizeof(sMaterial));
+	outfile.write((const char*)vertexVectors[0].vertices.data(), sizeof(sVertex) * vertexVectors[0].vertices.size());
+	outfile.write((const char*)indexVectors[0].indexes.data(), sizeof(unsigned int) * indexVectors[0].indexes.size());
+
+	outfile.close();
+
+}
+
 void Exporter::prepareMeshData(assembleStructs::Mesh assembleMesh)
 {
 	sMesh mesh;
 	mesh.isAnimated = false;
 	mesh.isBoundingBox = false;
-	
+
 	//change this
 	mesh.rotation[0] = 0;
 	mesh.rotation[1] = 0;
@@ -102,32 +136,4 @@ void Exporter::prepareMaterialData()
 	
 }
 
-void Exporter::writeToFile(string filepath)
-{
 
-	//I should copy all textures to a model folder.
-
-
-	offsetHeader.joint = 0;
-	offsetHeader.skeletonVertex = 0;
-	offsetHeader.vertex = 0;//dataHeader.vertices * sizeof(sVertex);
-	offsetHeader.index = 0;//dataHeader.indexes * sizeof(unsigned int);
-
-	dataHeader.datasize = sizeof(sMesh) + sizeof(sOffset) + sizeof(sHeader) + sizeof(sMaterial); //this need to be multiplied by the amounts
-	
-	dataHeader.buffersize += sizeof(sVertex) * meshVector[0].vertexCount;
-	dataHeader.buffersize += sizeof(unsigned int) * meshVector[0].indexCount;
-	
-	std::ofstream outfile(filepath, std::ofstream::binary); //output file stream
-
-	outfile.write((const char*)&dataHeader, sizeof(sDataHeader)); //main header
-	outfile.write((const char*)&MainHeader, sizeof(sHeader)); //main header
-	outfile.write((const char*)&offsetHeader, sizeof(sOffset)); //main header
-	outfile.write((const char*)&meshVector[0], sizeof(sMesh));
-	outfile.write((const char*)&MaterialVector[0], sizeof(sMaterial));
-	outfile.write((const char*)vertexVectors[0].vertices.data(), sizeof(sVertex) * vertexVectors[0].vertices.size());
-	outfile.write((const char*)indexVectors[0].indexes.data(), sizeof(unsigned int) * indexVectors[0].indexes.size());
-
-	outfile.close();
-	
-}

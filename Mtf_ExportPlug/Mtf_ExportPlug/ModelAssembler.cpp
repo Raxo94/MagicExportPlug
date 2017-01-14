@@ -2,9 +2,9 @@
 
 ModelAssembler::ModelAssembler()
 {
-	//AssembleMeshes();
+	
 	AssembleSkeletalMesh();
-	//AssembleMaterials();
+	AssembleMaterials();
 
 }
 
@@ -22,128 +22,146 @@ vector<Material>& ModelAssembler::GetMaterialVector()
 	return materials;
 }
 
-void ModelAssembler::AssembleMeshes()
+void ModelAssembler::AssembleMeshes(MObject MObjectMeshNode)
 {
-	MItDag it(MItDag::kDepthFirst);
-	MObject parent;
+	MFnMesh meshNode(MObjectMeshNode); 
+	Mesh tempMesh;
 
-	while (it.isDone() == false)
-	{
-		if (it.currentItem().hasFn(MFn::kMesh))
+	memcpy(&tempMesh.MeshName, meshNode.name().asChar(), sizeof(const char[256]));//MeshName
+
+	vector<Vertex>nodeVertices;
+	MFloatPointArray pts;
+	MIntArray vertexCounts;
+	MIntArray polygonVertexIDs;
+	MFloatArray u, v;
+	MIntArray uvCounts;
+	MIntArray uvIDs;
+	MFloatVectorArray normals;
+	MIntArray triangleCountsOffsets;
+	MIntArray triangleIndices;
+	MIntArray triangleCounts;
+	MIntArray triangleVertexIDs;
+	MVector vertexNormal;
+	MIntArray normalList, normalCount;
+
+	meshNode.getPoints(pts, MSpace::kObject);
+	meshNode.getUVs(u, v, 0);
+	meshNode.getAssignedUVs(uvCounts, uvIDs); //indices for UV:s
+
+	meshNode.getTriangleOffsets(triangleCountsOffsets, triangleIndices);
+	meshNode.getVertices(vertexCounts, polygonVertexIDs); //get vertex polygon indices
+
+
+	meshNode.getNormals(normals, MSpace::kObject);
+
+	nodeVertices.resize(triangleIndices.length());
+
+	meshNode.getNormalIds(normalCount, normalList);
+
+
+	for (unsigned int i = 0; i < triangleIndices.length(); i++)
+	{ //for each triangle index (36)
+
+		nodeVertices.at(i).pos[0] = pts[polygonVertexIDs[triangleIndices[i]]].x;
+		nodeVertices.at(i).pos[1] = pts[polygonVertexIDs[triangleIndices[i]]].y;
+		nodeVertices.at(i).pos[2] = pts[polygonVertexIDs[triangleIndices[i]]].z;
+
+		nodeVertices.at(i).nor[0] = normals[normalList[triangleIndices[i]]].x;
+		nodeVertices.at(i).nor[1] = normals[normalList[triangleIndices[i]]].y;
+		nodeVertices.at(i).nor[2] = normals[normalList[triangleIndices[i]]].z;
+
+		nodeVertices.at(i).uv[0] = u[uvIDs[triangleIndices[i]]];
+		nodeVertices.at(i).uv[1] = v[uvIDs[triangleIndices[i]]];
+
+
+		//indexing: if the tempMesh contains current vertex we list the earlier one in the indexlist;
+
+
+		bool VertexIsUnique = true;
+		for (size_t j = 0; j < tempMesh.Vertices.size(); j++)
 		{
-			//JAG MÅSTE GÖRA EN LISTA MED INFLUENSERNA OCH TYNGDERNA
-			
-			MFnDependencyNode meshnode(it.currentItem());
-			MItMeshVertex VertexData(it.currentItem());
-			MString name = meshnode.name(); // we have the mesh name! how are we going to get the transform;
-			MItGeometry geometryIterator(it.currentItem(), &res);
 
-			//indices
-			MFnMesh meshNode(it.currentItem()); //the meshNode
-			MIntArray triangleIndices;
-			MIntArray triangleCountsOffsets;
-			meshNode.getTriangleOffsets(triangleCountsOffsets, triangleIndices);
-			vector<unsigned int> indexes;
-			vector<unsigned int> Count;
-			vector<unsigned int> List;
-			//test indexes:: FAILURE
-
-			for (size_t i = 0; i < triangleIndices.length(); i++)
+			if (nodeVertices.at(i) == tempMesh.Vertices.at(j))
 			{
-				indexes.push_back(triangleIndices[i]);
+				tempMesh.indexes.push_back(j);
+				VertexIsUnique = false;
+				break; // get out of loop
 			}
 
-			MIntArray vertexCount;
-			MIntArray vertexList;
-			meshNode.getVertices(vertexCount,vertexList);
-
-			for (size_t i = 0; i < vertexCount.length(); i++)
-			{
-				Count.push_back(vertexCount[i]);
-			}
-			for (size_t i = 0; i < vertexList.length(); i++)
-			{
-				List.push_back(vertexList[i]);
-			}
+		}
+		if (VertexIsUnique == true)
+		{
+			tempMesh.indexes.push_back(tempMesh.Vertices.size());
+			tempMesh.Vertices.push_back(nodeVertices.at(i));
+		}
 
 
-			vector<SkeletonVertex>vertexVector;
-			for (size_t VertexIndex = 0; geometryIterator.isDone() == false; geometryIterator.next(), VertexData.next(), VertexIndex++)
-			{
-				float2 UV;
-				SkeletonVertex vertex;
-				int UVCount; res = VertexData.numUVs(UVCount);
+	}//Vertex END
 
-				for (size_t i = 0; i < UVCount; i++)
-				{
-					res = VertexData.getUV(UV);
-				}
-				MPoint position = VertexData.position();
-				MVector normal; res = VertexData.getNormal(normal);
-				res = VertexData.getUV(UV);
-
-
-				for (size_t i = 0; i < 3; i++)
-				{
-					vertex.pos[i] = position[i];
-					vertex.normal[i] = normal[i];
-				}
-
-				for (size_t i = 0; i < 2; i++)
-					vertex.uv[i] = UV[i];
-
-				vertexVector.push_back(vertex);
-			}
-
-		}//Mesh END
-
-
-
-		parent = it.currentItem();
-		it.next();
-
-
-
-		
-
-
-
-
-	}//Loop END 
+	//Okej så jag får 24 stycken. Vilket är för mycket... Men det borde kunna vara okkkkej?
+	tempMesh.vertexCount = tempMesh.Vertices.size();
+	Meshes.push_back(tempMesh);
 }
 
 void ModelAssembler::AssembleSkeletalMesh()
 {
+	/*MItDependencyNodes iter(MFn::kInvalid);
+	for (; !iter.isDone(); iter.next())
+	{
+		MObject object = iter.item();
+		if (object.apiType() == MFn::kSkinClusterFilter)
+		{
+			MFnDependencyNode testNode(object);
+			MString name = testNode.name();
+		}
+	}*/
+
+
 	Skeleton skeleton;
 	MPlugArray skinClusterArray;
-
+	MObject parent;
 	MItDag it(MItDag::kDepthFirst);
-	//check against skinClusters
 	for (; it.isDone() == false; it.next())
 	{
 		if (it.currentItem().hasFn(MFn::kMesh))
 		{
-			//get the cluster from the mesh
-			MFnDependencyNode depNode(it.currentItem());
-			MPlug inMesh = depNode.findPlug("inMesh", &res);
-			inMesh.connectedTo(skinClusterArray, true, false, &res);
-			MFnSkinCluster skinCluster(skinClusterArray[0].node(), &res);
-			if (res == true)
+			if (parent.hasFn(MFn::kTransform))
 			{
-				MString name = skinCluster.name(&res);
+				MFnDependencyNode parentNode(parent);
+				MFnDependencyNode depNode(it.currentItem());
+				MPlug inMesh = depNode.findPlug("inMesh", &res);
+				inMesh.connectedTo(skinClusterArray, true, false, &res);
+				//if we want several skinClusters. We could probably make a loop here
+				MFnSkinCluster skinCluster(skinClusterArray[0].node(), &res); //maybe we should make this loop trough all until it finds a skinCluster
+				if (res == true)
+				{
 
-				//Get the joints
-				ProcessInverseBindpose(skinCluster,skeleton);
-				ProcessSkeletalVertex(skinCluster, skeleton); //this is not done
-				ProcessKeyframes(skinCluster, skeleton);
+					//Make sure it really is a skinCluster
+					MString name = skinCluster.name(&res);
 
-			}
-			 
-		} //End of Mesh
+					//Get the joints
+					
+					ProcessInverseBindpose(skinCluster, skeleton, parentNode);
+					ProcessSkeletalVertex(skinCluster, skeleton);
+					ProcessSkeletalIndexes(skeleton.skeletalVertexVector, skeleton.indexes);
+					ProcessKeyframes(skinCluster, skeleton);
+
+
+
+				}
+				else //check if there is no skinCluster
+				{
+					AssembleMeshes(it.currentItem()); //make this assamble mesh instead
+				}
+
+			} //End of Mesh
+		}
+		parent = it.currentItem();
 	} //End of Node
+
 }
 
-void ModelAssembler::ProcessInverseBindpose(MFnSkinCluster& skinCluster, Skeleton& skeleton)
+void ModelAssembler::ProcessInverseBindpose(MFnSkinCluster& skinCluster, Skeleton& skeleton, MFnDependencyNode& parentNode)
 {
 	MDagPathArray jointArray;
 	skinCluster.influenceObjects(jointArray, &res);
@@ -153,28 +171,43 @@ void ModelAssembler::ProcessInverseBindpose(MFnSkinCluster& skinCluster, Skeleto
 		Joint joint;
 		MFnDependencyNode jointDep(jointArray[i].node());
 		joint.name = jointDep.name();
-		MPlug bindPosePlug = jointDep.findPlug("bindPose", &res);
+		MString parentName = parentNode.name();
 
-		MObject data;
-		bindPosePlug.getValue(data);
-		MFnMatrixData mData(data);
-		MMatrix inverseBindPoseMatrix = mData.matrix(&res).inverse(); //this is the bindpose. It is called world matrix in plugs
+		MPlug bindPosePlug = jointDep.findPlug("bindPose", &res);
+		MPlug inverseModelMatrixPlug = parentNode.findPlug("worldInverseMatrix", &res);
 
 		
-		for (size_t i = 0; i < 4; i++) //MMatrix transfered to Joints float[16]
+
+		MObject data;
+		res = bindPosePlug.getValue(data);
+		MFnMatrixData bindPoseData(data,&res);
+		MMatrix inverseGlobalBindPoseMatrix = bindPoseData.matrix(&res).inverse(); //this is the bindpose. It is called world matrix in plugs
+
+
+		MObject data2;
+		res= inverseModelMatrixPlug.getValue(data2);
+		MFnMatrixData ModelMatrixData(data2,&res); //here the issue arises.
+		MMatrix inverseModelMatrix = ModelMatrixData.matrix(&res); //this returns false?
+		
+		//World space * inverseModelSpace
+		MMatrix inversebindPoseMatrix = inverseGlobalBindPoseMatrix * inverseModelMatrix;
+
+
+
+
+		//MMatrix transfered to Joints float[16]
+		for (size_t i = 0; i < 4; i++) 
 		{
 			for (size_t j = 0; j < 4; j++)
 			{
-				joint.bindPoseInverse[(i * 4 + j)] = inverseBindPoseMatrix[i][j];
+				joint.globalBindPoseInverse[(i * 4 + j)] = inverseGlobalBindPoseMatrix[i][j];
+				joint.bindPoseInverse[(i * 4 + j)] = inversebindPoseMatrix[i][j];
 			}
 		}
-		
-	
-		GetJointParentID(jointDep, joint);
-		//globalinversebindpose?
+
+		GetJointParentID(jointDep, joint); //FIX ME MAYBE;
 		skeleton.jointVector.push_back(joint);
-		
-	}
+	} // end of joint
 }
 
 void ModelAssembler::GetJointParentID(MFnDependencyNode& jointDep, Joint& joint)
@@ -282,7 +315,6 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 
 		meshNode.getVertices(vertexCounts, polygonVertexIDs); //get vertex polygon indices
 
-
 		meshNode.getNormals(normals, MSpace::kObject);
 		
 		meshNode.getNormalIds(normalCount, normalList);
@@ -318,9 +350,9 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 			nodeVertices.at(i).pos[1] = pts[polygonVertexIDs[triangleIndices[i]]].y;
 			nodeVertices.at(i).pos[2] = pts[polygonVertexIDs[triangleIndices[i]]].z;
 
-			nodeVertices.at(i).normal[0] = normals[normalList[triangleIndices[i]]].x;
-			nodeVertices.at(i).normal[1] = normals[normalList[triangleIndices[i]]].y;
-			nodeVertices.at(i).normal[2] = normals[normalList[triangleIndices[i]]].z;
+			nodeVertices.at(i).nor[0] = normals[normalList[triangleIndices[i]]].x;
+			nodeVertices.at(i).nor[1] = normals[normalList[triangleIndices[i]]].y;
+			nodeVertices.at(i).nor[2] = normals[normalList[triangleIndices[i]]].z;
 
 			nodeVertices.at(i).uv[0] = u[uvIDs[triangleIndices[i]]];
 			nodeVertices.at(i).uv[1] = v[uvIDs[triangleIndices[i]]];
@@ -330,11 +362,38 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 		}
 
 		skeleton.skeletalVertexVector = nodeVertices; //so far im only planing on having one list per skeleton.
-	
 	} //End of Current Mesh Looping to next
 }
 
 
+
+void ModelAssembler::ProcessSkeletalIndexes(vector<SkeletonVertex>& unfilteredVertexVector, vector<unsigned int>& indexes)
+{
+	vector<SkeletonVertex> UniqueVertexes;
+
+	for (unsigned int i = 0; i < unfilteredVertexVector.size(); i++)
+	{
+		bool VertexIsUnique = true; //if this remains true the vertex needs to be saved.
+
+		for (size_t j = 0; j < UniqueVertexes.size(); j++)
+		{	
+			if (unfilteredVertexVector.at(i) == UniqueVertexes.at(j))
+			{
+				indexes.push_back(j);
+				VertexIsUnique = false;
+				break;
+				//if there unfiltered i is not the same as any of the uiniques add it.
+				//else put a note to the index it was the same as-
+			}
+		}
+		if (VertexIsUnique == true)
+		{
+			indexes.push_back(UniqueVertexes.size());
+			UniqueVertexes.push_back(unfilteredVertexVector.at(i));
+		}
+	}
+	unfilteredVertexVector = UniqueVertexes;
+}
 
 void ModelAssembler::ProcessKeyframes(MFnSkinCluster & skinCluster, Skeleton & skeleton)
 {
@@ -408,7 +467,7 @@ void ModelAssembler::ProcessKeyframes(MFnSkinCluster & skinCluster, Skeleton & s
 void ModelAssembler::AssembleMaterials()
 {
 	MItDependencyNodes itDepNode(MFn::kLambert); //Is used inorder to go trough materials
-	itDepNode.reset(MFn::kLambert); //not helping the lambert issue. We find the shading groups but not the nodes
+	itDepNode.reset(MFn::kLambert); //On the nuk computers we have the issue that lamberts will not be found
 
 	while (itDepNode.isDone() == false)
 	{
@@ -599,6 +658,29 @@ bool assembleStructs::operator==(const assembleStructs::Vertex & left, const ass
 		{
 			if (left.uv == right.uv)
 				return true;
+		}
+	}
+
+	return false;
+}
+
+bool assembleStructs::operator==(const assembleStructs::SkeletonVertex & left, const assembleStructs::SkeletonVertex & right)
+{
+	if (left.pos == right.pos)
+	{
+		if (left.nor == right.nor)
+		{
+			if (left.uv == right.uv)
+			{
+				if (left.deformer.influences == right.deformer.influences)
+				{
+					if (left.deformer.weights == right.deformer.weights)
+					{
+						//Deformer check may be uneccesary- need to be proven first
+						return true;
+					}
+				}
+			}	
 		}
 	}
 

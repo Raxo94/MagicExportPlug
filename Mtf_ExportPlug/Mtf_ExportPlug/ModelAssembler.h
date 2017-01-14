@@ -30,7 +30,7 @@ namespace assembleStructs
 	struct SkeletonVertex
 	{
 		std::array<float, 3> pos;
-		std::array<float, 3> normal;
+		std::array<float, 3> nor;
 		std::array<float, 2> uv;
 		
 		vertexDeform deformer;
@@ -53,7 +53,6 @@ namespace assembleStructs
 	struct Joint
 	{
 		int ID, parentID;
-		//std::array<float, 3> pos, rot, scale;
 		std::array<float, 16> bindPoseInverse, globalBindPoseInverse;
 		MString name;
 		int animationStateCount;
@@ -63,17 +62,23 @@ namespace assembleStructs
 
 	struct Skeleton
 	{
+		vector<char[256]> MeshNames; //for viewing purposes
+		//maybe have meshes?
+		vector<unsigned int> indexes;
 		vector<Joint> jointVector;
 		vector<SkeletonVertex> skeletalVertexVector;
+
 	};
 
 	//Vertex Compare Used for indexing
 	bool operator==(const assembleStructs::Vertex& left, const assembleStructs::Vertex& right);
+	bool operator == (const assembleStructs::SkeletonVertex& left, const assembleStructs::SkeletonVertex& right);
 
 	struct Material
 	{
 		vector<std::array<char, 256> > boundMeshes;
 		bool hasTexture;
+
 		std::array<char, 256> textureFilepath;
 		std::array<char, 256> specularFilepath;
 		std::array<char, 256> diffuseFilepath;
@@ -125,11 +130,12 @@ private:
 	vector<Material> materials;
 
 	//Functions
-	void AssembleMeshes();
+	void AssembleMeshes(MObject MObjectMeshNode);
 	void AssembleSkeletalMesh();
 	void AssembleMaterials();
-	void ProcessInverseBindpose(MFnSkinCluster&, Skeleton&);
+	void ProcessInverseBindpose(MFnSkinCluster&, Skeleton&, MFnDependencyNode& parentNode);
 	void ProcessSkeletalVertex (MFnSkinCluster& skinCluster, Skeleton& skeleton);
+	void ProcessSkeletalIndexes(vector<SkeletonVertex>& vertexVector, vector<unsigned int>& indexes);
 	void GetJointParentID(MFnDependencyNode& jointDep,Joint& joint);
 	vector<vertexDeform> GetSkinWeights(MDagPath skinPath, MFnSkinCluster& skinCluster, vector<Joint>joints);
 	void ProcessKeyframes (MFnSkinCluster& skinCluster, Skeleton& skeleton);
