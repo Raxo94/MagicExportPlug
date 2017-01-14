@@ -36,7 +36,7 @@ void Exporter::writeModelsToFile(string outFilePath)
 	dataHeader.buffersize += sizeof(sVertex) * meshVector[0].vertexCount;
 	dataHeader.buffersize += sizeof(unsigned int) * meshVector[0].indexCount;
 
-	std::ofstream outfile(filepath, std::ofstream::binary); //output file stream
+	std::ofstream outfile(outFilePath, std::ofstream::binary); //output file stream
 
 	outfile.write((const char*)&dataHeader, sizeof(sDataHeader)); //main header
 	outfile.write((const char*)&MainHeader, sizeof(sHeader)); //main header
@@ -48,6 +48,11 @@ void Exporter::writeModelsToFile(string outFilePath)
 
 	outfile.close();
 
+}
+
+void Exporter::writeMaterialsToFile(string outFilePath)
+{
+	;
 }
 
 void Exporter::prepareMeshData(assembleStructs::Mesh assembleMesh)

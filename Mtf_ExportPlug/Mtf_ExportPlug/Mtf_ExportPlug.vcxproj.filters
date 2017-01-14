@@ -21,13 +21,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="maya_includes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Exporter.h">
-      <Filter>Header Files</Filter>
+      <Filter>Exporter</Filter>
     </ClInclude>
     <ClInclude Include="ModelAssembler.h">
+      <Filter>Assembler</Filter>
+    </ClInclude>
+    <ClInclude Include="maya_includes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -38,11 +38,8 @@
     <ClCompile Include="ModelAssembler.cpp">
       <Filter>Assembler</Filter>
     </ClCompile>
-    <ClCompile Include="TRASH.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Exporter.cpp">
-      <Filter>Assembler</Filter>
+      <Filter>Exporter</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -27,7 +27,6 @@ EXPORT MStatus initializePlugin(MObject obj)
 	Export.writeModelsToFile(outfileMesh);
 	Export.writeMaterialsToFile(outfileModel);
 
-
 	MGlobal::displayInfo("Maya plugin loaded!");
 	return MS::kSuccess;
 	
