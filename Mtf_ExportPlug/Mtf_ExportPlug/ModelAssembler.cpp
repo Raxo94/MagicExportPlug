@@ -185,13 +185,16 @@ void ModelAssembler::ProcessInverseBindpose(MFnSkinCluster& skinCluster, Skeleto
 		MMatrix inverseGlobalBindPoseMatrix = bindPoseData.matrix(&res).inverse(); //this is the bindpose. It is called world matrix in plugs
 
 
-		MObject data2;
-		res= inverseModelMatrixPlug.getValue(data2);
-		MFnMatrixData ModelMatrixData(data2,&res); //here the issue arises.
-		MMatrix inverseModelMatrix = ModelMatrixData.matrix(&res); //this returns false?
+
+		//MObject data2;
+		//res= inverseModelMatrixPlug.getValue(data2);
+		//MFnMatrixData ModelMatrixData(data2,&res); //here the issue arises.
+		//MMatrix inverseModelMatrix = ModelMatrixData.matrix(&res); //this returns false?
 		
-		//World space * inverseModelSpace
-		MMatrix inversebindPoseMatrix = inverseGlobalBindPoseMatrix * inverseModelMatrix;
+		
+		//MMatrix inversebindPoseMatrix = inverseGlobalBindPoseMatrix * inverseModelMatrix; //World space * inverseModelSpace
+		
+		MMatrix inverseBindPoseMatrix = inverseGlobalBindPoseMatrix;
 
 		//MMatrix transfered to Joints float[16]
 		for (size_t i = 0; i < 4; i++) 
@@ -199,7 +202,7 @@ void ModelAssembler::ProcessInverseBindpose(MFnSkinCluster& skinCluster, Skeleto
 			for (size_t j = 0; j < 4; j++)
 			{
 				joint.globalBindPoseInverse[(i * 4 + j)] = inverseGlobalBindPoseMatrix[i][j];
-				joint.bindPoseInverse[(i * 4 + j)] = inversebindPoseMatrix[i][j];
+				joint.bindPoseInverse[(i * 4 + j)] = inverseBindPoseMatrix[i][j];
 			}
 		}
 
