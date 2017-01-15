@@ -3,7 +3,7 @@
 ModelAssembler::ModelAssembler()
 {
 	
-	AssembleSkeletalMesh();
+	AssembleSkeletonsAndMeshes();
 	AssembleMaterials();
 
 }
@@ -17,12 +17,17 @@ vector<Mesh>& ModelAssembler::GetMeshVector()
 	return Meshes;
 }
 
+vector<Skeleton>& ModelAssembler::GetSkeletonVector()
+{
+	return Skeletons;
+}
+
 vector<Material>& ModelAssembler::GetMaterialVector()
 {
 	return materials;
 }
 
-void ModelAssembler::AssembleMeshes(MObject MObjectMeshNode)
+void ModelAssembler::AssembleMesh(MObject MObjectMeshNode)
 {
 	MFnMesh meshNode(MObjectMeshNode); 
 	Mesh tempMesh;
@@ -60,7 +65,7 @@ void ModelAssembler::AssembleMeshes(MObject MObjectMeshNode)
 
 
 	for (unsigned int i = 0; i < triangleIndices.length(); i++)
-	{ //for each triangle index (36)
+	{ //for each triangle index (36) in a box
 
 		nodeVertices.at(i).pos[0] = pts[polygonVertexIDs[triangleIndices[i]]].x;
 		nodeVertices.at(i).pos[1] = pts[polygonVertexIDs[triangleIndices[i]]].y;
@@ -75,8 +80,6 @@ void ModelAssembler::AssembleMeshes(MObject MObjectMeshNode)
 
 
 		//indexing: if the tempMesh contains current vertex we list the earlier one in the indexlist;
-
-
 		bool VertexIsUnique = true;
 		for (size_t j = 0; j < tempMesh.Vertices.size(); j++)
 		{
@@ -94,33 +97,24 @@ void ModelAssembler::AssembleMeshes(MObject MObjectMeshNode)
 			tempMesh.indexes.push_back(tempMesh.Vertices.size());
 			tempMesh.Vertices.push_back(nodeVertices.at(i));
 		}
+		//end of indexing
 
 
 	}//Vertex END
 
-	//Okej så jag får 24 stycken. Vilket är för mycket... Men det borde kunna vara okkkkej?
 	tempMesh.vertexCount = tempMesh.Vertices.size();
-	Meshes.push_back(tempMesh);
+	this->Meshes.push_back(tempMesh);
 }
 
-void ModelAssembler::AssembleSkeletalMesh()
+void ModelAssembler::AssembleSkeletonsAndMeshes()
 {
-	/*MItDependencyNodes iter(MFn::kInvalid);
-	for (; !iter.isDone(); iter.next())
-	{
-		MObject object = iter.item();
-		if (object.apiType() == MFn::kSkinClusterFilter)
-		{
-			MFnDependencyNode testNode(object);
-			MString name = testNode.name();
-		}
-	}*/
-
 
 	Skeleton skeleton;
 	MPlugArray skinClusterArray;
 	MObject parent;
 	MItDag it(MItDag::kDepthFirst);
+
+
 	for (; it.isDone() == false; it.next())
 	{
 		if (it.currentItem().hasFn(MFn::kMesh))
@@ -145,14 +139,16 @@ void ModelAssembler::AssembleSkeletalMesh()
 					ProcessSkeletalVertex(skinCluster, skeleton);
 					ProcessSkeletalIndexes(skeleton.skeletalVertexVector, skeleton.indexes);
 					ProcessKeyframes(skinCluster, skeleton);
-
+					this->Skeletons.push_back(skeleton);
 
 
 				}
 				else //check if there is no skinCluster
 				{
-					AssembleMeshes(it.currentItem()); //make this assamble mesh instead
+					AssembleMesh(it.currentItem()); //make this assamble mesh instead
 				}
+
+				this->Skeletons.push_back(skeleton);
 
 			} //End of Mesh
 		}
@@ -192,9 +188,6 @@ void ModelAssembler::ProcessInverseBindpose(MFnSkinCluster& skinCluster, Skeleto
 		//World space * inverseModelSpace
 		MMatrix inversebindPoseMatrix = inverseGlobalBindPoseMatrix * inverseModelMatrix;
 
-
-
-
 		//MMatrix transfered to Joints float[16]
 		for (size_t i = 0; i < 4; i++) 
 		{
@@ -205,7 +198,7 @@ void ModelAssembler::ProcessInverseBindpose(MFnSkinCluster& skinCluster, Skeleto
 			}
 		}
 
-		GetJointParentID(jointDep, joint); //FIX ME MAYBE;
+		GetJointParentID2(jointDep, joint,skeleton.jointVector); //FIX ME MAYBE;
 		skeleton.jointVector.push_back(joint);
 	} // end of joint
 }
@@ -241,7 +234,38 @@ void ModelAssembler::GetJointParentID(MFnDependencyNode& jointDep, Joint& joint)
 	//globalinversebindpose?
 }
 
-vector<vertexDeform> ModelAssembler::GetSkinWeights(MDagPath skinPath,MFnSkinCluster& skinCluster, vector<Joint>joints)
+void ModelAssembler::GetJointParentID2(MFnDependencyNode & jointDep, Joint & currentJoint,vector<Joint>OtherJoints)
+{
+
+	MPlugArray jointArray;
+	MPlug inverseScale = jointDep.findPlug("inverseScale", &res); //just inorder to get parent
+	MString parentName;
+	currentJoint.ID = OtherJoints.size();
+	currentJoint.parentID = 0;
+	///MPlug scale = jointDep.findPlug("scale", &res); //used in order to get children
+	
+	
+	inverseScale.connectedTo(jointArray, true, false, &res);
+
+	if (jointArray.length() > 0) //this gets the parent
+	{
+		MFnDependencyNode parent(jointArray[0].node());
+		parentName = parent.name();
+	}
+
+	for (size_t i = 0; i < OtherJoints.size(); i++)
+	{
+		if ((parentName == OtherJoints.at(i).name))
+		{
+			currentJoint.parentID = OtherJoints.at(i).ID;
+			break;
+		}
+	}
+
+
+}
+
+vector<vertexDeform> ModelAssembler::GetSkinWeightsList(MDagPath skinPath,MFnSkinCluster& skinCluster, vector<Joint>joints)
 {
 	vector<vertexDeform> vertexDeformVector;
 	MItGeometry geometryIterator(skinPath, &res);
@@ -286,14 +310,18 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 	{
 		unsigned int index = skinCluster.indexForOutputConnection(i, &res); 
 
-
 		MDagPath skinPath;  res = skinCluster.getPathAtIndex(index, skinPath); //get weights for each vertex {8 in a cube}
 		MFnMesh meshNode(skinPath.node()); //the meshNode
+
+		//getMEshName
 		MFnDependencyNode meshnode(skinPath.node());
 		MString name = meshnode.name(); //for debuging purposes
+		std::array<char, 256> meshName;
+		memcpy(&meshName, name.asChar(), name.length() * sizeof(char)); 
+		skeleton.meshNames.push_back(meshName);
 
 		//weights
-		vector<vertexDeform>VertexDeformVector = GetSkinWeights(skinPath, skinCluster, skeleton.jointVector);
+		vector<vertexDeform>VertexDeformVector = GetSkinWeightsList(skinPath, skinCluster, skeleton.jointVector);
 
 		//Positions Normals UVs.
 		vector<SkeletonVertex>nodeVertices;
@@ -466,12 +494,11 @@ void ModelAssembler::ProcessKeyframes(MFnSkinCluster & skinCluster, Skeleton & s
 
 void ModelAssembler::AssembleMaterials()
 {
-	MItDependencyNodes itDepNode(MFn::kLambert); //Is used inorder to go trough materials
-	itDepNode.reset(MFn::kLambert); //On the nuk computers we have the issue that lamberts will not be found
+	MItDependencyNodes itDepNode(MFn::kLambert); //used inorder to go trough materials
+	itDepNode.reset(MFn::kLambert); // Nuk computers have an issue- lamberts will not be found.
 
 	while (itDepNode.isDone() == false)
 	{
-		std::array<char, 256> meshName;
 		MObject mNode = itDepNode.item();
 		Material tempMaterial;
 
@@ -480,6 +507,7 @@ void ModelAssembler::AssembleMaterials()
 		MPlugArray dagSetMemberConnections;
 		MPlugArray objInstArray;
 		MPlugArray bmpGroup;
+		MObject data;
 
 		MFnDependencyNode materialNode(mNode);
 		MString materialName = materialNode.name();
@@ -491,30 +519,22 @@ void ModelAssembler::AssembleMaterials()
 		MPlug specularColor = materialNode.findPlug("specularColor"); //to get the specular color of the material
 		
 		//GetNormalMap plug
-		try
+		MPlug normalCamera = materialNode.findPlug("normalCamera");
+		normalCamera.connectedTo(bmpGroup, true, false, &res);
+		if(bmpGroup.length()>0)
 		{
-			MPlug normalCamera = materialNode.findPlug("normalCamera");
-			normalCamera.connectedTo(bmpGroup, true, false, &res);
-			if(bmpGroup.length()>0)
-			{
-				MFnDependencyNode bmpMap(bmpGroup[0].node());
-				MPlug bumpValue = bmpMap.findPlug("bumpValue");
+			MFnDependencyNode bmpMap(bmpGroup[0].node());
+			MPlug bumpValue = bmpMap.findPlug("bumpValue");
 
-				////normal Texture
-				bumpValue.connectedTo(textureGroup, true, false, &res);
-				tempMaterial.normalFilepath = GetTexture(textureGroup);
-				//tempMaterial.normalFilepath = { 0 };
-			}
-			
+			////normal Texture
+			bumpValue.connectedTo(textureGroup, true, false, &res);
+			tempMaterial.normalFilepath = GetTexture(textureGroup); //make
 		}
-		catch (int e)
+		else //there where no bumpMap
 		{
-			cout << "An exception occurred. Exception Nr. " << e << '\n';
-			tempMaterial.normalFilepath = { 0 };
+			memcpy(&tempMaterial.normalFilepath, "NOTEXTURE", sizeof(const char[10]));
 		}
 		
-
-		MObject data;
 
 		//color
 		color.getValue(data);
@@ -524,27 +544,31 @@ void ModelAssembler::AssembleMaterials()
 		//texture
 		color.connectedTo(textureGroup, true, false, &res); 
 		tempMaterial.textureFilepath = GetTexture(textureGroup); 
-		if (textureGroup.length() > 0) tempMaterial.hasTexture = true; 
-		else tempMaterial.hasTexture = false;
-		
+		if (textureGroup.length() == 0)
+			memcpy(&tempMaterial.textureFilepath, "NOTEXTURE", sizeof(const char[10]));
+	
 		//specular color
 		specularColor.getValue(data);
 		MFnNumericData specularData(data);
 		specularData.getData(tempMaterial.specularColor[0], tempMaterial.specularColor[1], tempMaterial.specularColor[2]);
-
+		
 		//specular texture
 		specularColor.connectedTo(textureGroup, true, false, &res); 
 		tempMaterial.specularFilepath = GetTexture(textureGroup); 
+		if (textureGroup.length() == 0)
+			memcpy(&tempMaterial.specularFilepath, "NOTEXTURE", sizeof(const char[10]));
 		
 		//diffuse
 		diffuse.getValue(tempMaterial.diffuse);
-
 		//diffuse Texture
 		diffuse.connectedTo(textureGroup, true, false, &res); 
 		tempMaterial.diffuseFilepath = GetTexture(textureGroup); 
+		if (textureGroup.length() == 0)
+			memcpy(&tempMaterial.diffuseFilepath, "NOTEXTURE", sizeof(const char[10]));
 
 		
 		
+		//Get connected Meshes
 		outColor.connectedTo(shadingGoupArray, false, true, &res);
 		for (int i = 0; i < shadingGoupArray.length(); i++)  //for all shading groups
 		{
@@ -564,6 +588,7 @@ void ModelAssembler::AssembleMaterials()
 							MFnDependencyNode dagSetMemberNode(dagSetMemberConnections[d].node()); //in order to get materials meshes
 							if (strcmp(dagSetMemberNode.name().asChar(), "shaderBallGeom1") != 0) 
 							{
+								std::array<char, 256> meshName;
 								MFnMesh mesh(dagSetMemberNode.object()); //get the mesh in order to get the name of the mesh
 								memcpy(&meshName, mesh.name().asChar(), sizeof(char[256])); //get the name of mesh bound to material
 								tempMaterial.boundMeshes.push_back(meshName);
