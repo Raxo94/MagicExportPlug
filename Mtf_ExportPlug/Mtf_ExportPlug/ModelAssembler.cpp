@@ -60,6 +60,10 @@ void ModelAssembler::AssembleMesh(MObject MObjectMeshNode)
 	meshNode.getVertices(vertexCounts, polygonVertexIDs); //get vertex polygon indices
 
 
+	MFloatVectorArray tangents;
+	meshNode.getTangents(tangents);
+
+
 	meshNode.getNormals(normals, MSpace::kObject);
 
 	nodeVertices.resize(triangleIndices.length());
@@ -81,6 +85,10 @@ void ModelAssembler::AssembleMesh(MObject MObjectMeshNode)
 		nodeVertices.at(i).uv[0] = u[uvIDs[triangleIndices[i]]];
 		nodeVertices.at(i).uv[1] = v[uvIDs[triangleIndices[i]]];
 
+		//Dont know how to get the tangents.,safdo
+		nodeVertices.at(i).tangent[0] = 0;
+		nodeVertices.at(i).tangent[1] = 0;
+		nodeVertices.at(i).tangent[2] = 0;
 
 		//indexing: if the tempMesh contains current vertex we list the earlier one in the indexlist;
 		bool VertexIsUnique = true;
@@ -488,7 +496,7 @@ void ModelAssembler::AssembleMaterials()
 
 		MFnDependencyNode materialNode(mNode);
 		MString materialName = materialNode.name();
-		memcpy(&tempMaterial.name, materialName.asChar(), materialName.length() * sizeof(char));
+		memcpy(&tempMaterial.name, materialName.asChar(), materialName.length() * sizeof(char) + 1);
 
 		//Get MaterialNode Plugs
 		MPlug outColor = materialNode.findPlug("outColor"); //to go further in the plugs

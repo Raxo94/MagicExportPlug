@@ -30,6 +30,9 @@
     <ClInclude Include="maya_includes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ExportHeaders.h">
+      <Filter>Exporter</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source.cpp">

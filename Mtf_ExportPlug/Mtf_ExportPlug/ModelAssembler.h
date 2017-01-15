@@ -25,6 +25,7 @@ namespace assembleStructs
 		std::array<float, 3> pos;
 		std::array<float, 3> nor;
 		std::array<float, 2> uv;
+		std::array<float, 3> tangent; //<--- IS NEEDED
 	};
 
 	struct SkeletonVertex
@@ -129,6 +130,7 @@ public:
 	vector<Mesh>&GetMeshVector();
 	vector<Skeleton>&GetSkeletonVector();
 	vector<Material>&GetMaterialVector();
+	
 
 private:
 	//Variables

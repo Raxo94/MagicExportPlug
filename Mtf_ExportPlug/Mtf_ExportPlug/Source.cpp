@@ -20,12 +20,12 @@ EXPORT MStatus initializePlugin(MObject obj)
 	}
 
 	Exporter Export;
-	string outfileMesh = "C:/Project_Erebus/Erebus/Models/PlugTest.model";
+	string outfileMesh = "C:/Git_Repos/MagicExportPlug/Exports/";
 	//put a for loop going trough every material in export
-	string outfileModel = "C:/Project_Erebus/Erebus/Models/PlugTest.material";
+	string outfileModel = "C:/Git_Repos/MagicExportPlug/Exports/";
 
-//	Export.writeModelsToFile(outfileMesh);
-//	Export.writeMaterialsToFile(outfileModel);
+	Export.writeModelsToFile(outfileMesh);
+	Export.writeMaterialsToFile(outfileModel);
 
 	MGlobal::displayInfo("Maya plugin loaded!");
 	return MS::kSuccess;
