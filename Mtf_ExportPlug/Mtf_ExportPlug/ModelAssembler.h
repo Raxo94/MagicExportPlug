@@ -24,7 +24,7 @@ namespace assembleStructs
 	{
 		std::array<float, 3> pos;
 		std::array<float, 3> nor;
-		std::array<float, 3> tangent;
+		std::array<float, 3> tan;
 		std::array<float, 2> uv;
 
 
@@ -99,6 +99,7 @@ namespace assembleStructs
 		vector<Vertex> Vertices;
 		vector<unsigned int> indexes;
 		Transform transform;
+		MDagPath Meshpath; //to be used only in assambler
 
 	};
 
@@ -108,6 +109,8 @@ namespace assembleStructs
 		std::array<char, 256> meshName;
 		vector<unsigned int> indexes;
 		vector<SkeletonVertex> skeletalVertexVector;
+		Transform transform;
+		MDagPath Meshpath; //to be used only in assambler
 	};
 
 	struct Skeleton
@@ -141,7 +144,7 @@ private:
 	vector<Material> materials;
 
 	//Functions
-	void AssembleMesh(MObject MObjectMeshNode);
+	void AssembleMesh(MObject MObjectMeshNode,MObject Parent);
 	void AssembleSkeletonsAndMeshes();
 	void AssembleMaterials();
 	void ConnectMaterialsToMeshes();

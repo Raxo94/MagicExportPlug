@@ -30,10 +30,11 @@ vector<Material>& ModelAssembler::GetMaterialVector()
 	return materials;
 }
 
-void ModelAssembler::AssembleMesh(MObject MObjectMeshNode)
+void ModelAssembler::AssembleMesh(MObject MObjectMeshNode,MObject Parent)
 {
 	MFnMesh meshNode(MObjectMeshNode); 
 	Mesh tempMesh;
+
 
 	memcpy(&tempMesh.MeshName, meshNode.name().asChar(), sizeof(const char[256]));//MeshName
 
@@ -45,12 +46,14 @@ void ModelAssembler::AssembleMesh(MObject MObjectMeshNode)
 	MIntArray uvCounts;
 	MIntArray uvIDs;
 	MFloatVectorArray normals;
+	MFloatVectorArray tangents;
 	MIntArray triangleCountsOffsets;
 	MIntArray triangleIndices;
 	MIntArray triangleCounts;
 	MIntArray triangleVertexIDs;
 	MVector vertexNormal;
 	MIntArray normalList, normalCount;
+	MIntArray tangentList, tangentCount;
 
 	meshNode.getPoints(pts, MSpace::kObject);
 	meshNode.getUVs(u, v, 0);
@@ -61,11 +64,15 @@ void ModelAssembler::AssembleMesh(MObject MObjectMeshNode)
 
 
 	meshNode.getNormals(normals, MSpace::kObject);
+	meshNode.getTangents(tangents, MSpace::kObject);
 
 	nodeVertices.resize(triangleIndices.length());
 
+
 	meshNode.getNormalIds(normalCount, normalList);
 
+	//jag behöver en lista av faces och jag behöver få ut genom att ge vertex
+	//meshNode.getTangentId
 
 	for (unsigned int i = 0; i < triangleIndices.length(); i++)
 	{ //for each triangle index (36) in a box
@@ -73,6 +80,11 @@ void ModelAssembler::AssembleMesh(MObject MObjectMeshNode)
 		nodeVertices.at(i).pos[0] = pts[polygonVertexIDs[triangleIndices[i]]].x;
 		nodeVertices.at(i).pos[1] = pts[polygonVertexIDs[triangleIndices[i]]].y;
 		nodeVertices.at(i).pos[2] = pts[polygonVertexIDs[triangleIndices[i]]].z;
+		
+		//first is faceId then is vertex id.
+		// i need to know what face i am on...
+		//nodeVertices.at(i).tan[0] = tangents[polygonVertexIDs[triangleIndices[i]]].x;
+
 
 		nodeVertices.at(i).nor[0] = normals[normalList[triangleIndices[i]]].x;
 		nodeVertices.at(i).nor[1] = normals[normalList[triangleIndices[i]]].y;
@@ -106,6 +118,8 @@ void ModelAssembler::AssembleMesh(MObject MObjectMeshNode)
 	}//Vertex END
 
 	tempMesh.vertexCount = tempMesh.Vertices.size();
+	MFnTransform transform(Parent); //the parent is the transform
+	tempMesh.transform = GetTransform(transform);
 	this->standardMeshes.push_back(tempMesh);
 }
 
@@ -144,13 +158,18 @@ void ModelAssembler::AssembleSkeletonsAndMeshes()
 					for (size_t i = 0; i < skeleton.MeshVector.size(); i++)
 					{
 						ProcessSkeletalIndexes(skeleton.MeshVector.at(i).skeletalVertexVector, skeleton.MeshVector.at(i).indexes);
+						
+						MFnTransform transform= skeleton.MeshVector.at(i).Meshpath.transform();
+						skeleton.MeshVector.at(i).transform = GetTransform(transform);
+
+
 					}
 					
 					ProcessKeyframes(skinCluster, skeleton);
 				}
 				else //check if there is no skinCluster
 				{
-					AssembleMesh(it.currentItem()); //make this assamble mesh instead
+					AssembleMesh(it.currentItem(),parent); //make this assamble mesh instead
 				}
 
 				this->Skeletons.push_back(skeleton);
@@ -291,6 +310,7 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 
 		MDagPath skinPath;  res = skinCluster.getPathAtIndex(index, skinPath); //get weights for each vertex {8 in a cube}
 		MFnMesh meshNode(skinPath.node()); //the meshNode
+		skeletalMesh.Meshpath = skinPath;
 
 		//getMEshName
 		MFnDependencyNode meshnode(skinPath.node());
@@ -365,6 +385,7 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 			nodeVertices.at(i).uv[1] = v[uvIDs[triangleIndices[i]]];
 
 			nodeVertices.at(i).deformer = VertexDeformVector[ polygonVertexIDs[ triangleIndices[i]]];
+
 			//Vi kollar till vilken vertex trianglen pekar på och hämtar den vikten
 		}
 		skeletalMesh.skeletalVertexVector = nodeVertices;
@@ -620,8 +641,6 @@ void ModelAssembler::ConnectMaterialsToMeshes()
 					standardMeshes.at(j).material = material;
 				}
 			}//end of standard meshes
-
-
 
 		}
 	
