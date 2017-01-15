@@ -7,6 +7,8 @@ ModelAssembler::ModelAssembler()
 	AssembleMaterials();
 	ConnectMaterialsToMeshes();
 
+	Skeletons;
+	standardMeshes;
 }
 
 ModelAssembler::~ModelAssembler()
@@ -15,7 +17,7 @@ ModelAssembler::~ModelAssembler()
 
 vector<Mesh>& ModelAssembler::GetMeshVector()
 {
-	return Meshes;
+	return standardMeshes;
 }
 
 vector<Skeleton>& ModelAssembler::GetSkeletonVector()
@@ -104,7 +106,7 @@ void ModelAssembler::AssembleMesh(MObject MObjectMeshNode)
 	}//Vertex END
 
 	tempMesh.vertexCount = tempMesh.Vertices.size();
-	this->Meshes.push_back(tempMesh);
+	this->standardMeshes.push_back(tempMesh);
 }
 
 void ModelAssembler::AssembleSkeletonsAndMeshes()
@@ -582,13 +584,38 @@ void ModelAssembler::AssembleMaterials()
 
 void ModelAssembler::ConnectMaterialsToMeshes()
 {
-	materials;
 	Skeletons;
-	for (Skeleton skeleton : Skeletons)
+
+	for (Material material : materials)
 	{
-		skeleton.MeshVector[0].meshName;
-		//det är fel på vectorn just nu.
+		for (std::array<char, 256> boundMeshName : material.boundMeshes)
+		{
+
+			for (size_t i = 0; i < Skeletons.size(); i++)
+			{
+				for (size_t j = 0; j < Skeletons.at(i).MeshVector.size(); j++)
+				{
+					if (boundMeshName == Skeletons.at(i).MeshVector.at(j).meshName)
+						Skeletons.at(i).MeshVector.at(j).material = material;
+				} //end of skeletal meshes
+
+			}// end of skeletons
+
+
+			for (size_t j = 0; j <standardMeshes.size(); j++)
+			{
+				if (boundMeshName == standardMeshes.at(j).MeshName)
+				{
+					standardMeshes.at(j).material = material;
+				}
+			}//end of standard meshes
+
+
+
+		}
+	
 	}
+	
 
 }
 

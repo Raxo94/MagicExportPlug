@@ -60,19 +60,7 @@ namespace assembleStructs
 		//joints har koll på olika keyframes för olika lager
 	};
 
-	struct SkeletalMesh
-	{
-		std::array<char, 256> meshName;
-		vector<unsigned int> indexes;
-		vector<SkeletonVertex> skeletalVertexVector;
-	};
-
-	struct Skeleton
-	{
-		vector<SkeletalMesh> MeshVector;
-		vector<Joint> jointVector;
-		
-	};
+	
 
 	//Vertex Compare Used for indexing
 	bool operator==(const assembleStructs::Vertex& left, const assembleStructs::Vertex& right);
@@ -102,7 +90,8 @@ namespace assembleStructs
 
 	struct Mesh
 	{
-		char MeshName[256];
+		Material material;
+		std::array<char, 256> MeshName;
 		unsigned int vertexCount;
 		vector<Vertex> Vertices;
 		vector<unsigned int> indexes;
@@ -110,6 +99,20 @@ namespace assembleStructs
 
 	};
 
+	struct SkeletalMesh
+	{
+		Material material;
+		std::array<char, 256> meshName;
+		vector<unsigned int> indexes;
+		vector<SkeletonVertex> skeletalVertexVector;
+	};
+
+	struct Skeleton
+	{
+		vector<SkeletalMesh> MeshVector;
+		vector<Joint> jointVector;
+
+	};
 	
 
 	
@@ -130,7 +133,7 @@ public:
 private:
 	//Variables
 	MStatus res;
-	vector<Mesh> Meshes;
+	vector<Mesh> standardMeshes;
 	vector<Skeleton> Skeletons;
 	vector<Material> materials;
 
