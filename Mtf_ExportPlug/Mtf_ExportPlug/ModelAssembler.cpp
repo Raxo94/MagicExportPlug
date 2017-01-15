@@ -5,6 +5,7 @@ ModelAssembler::ModelAssembler()
 	
 	AssembleSkeletonsAndMeshes();
 	AssembleMaterials();
+	ConnectMaterialsToMeshes();
 
 }
 
@@ -137,11 +138,13 @@ void ModelAssembler::AssembleSkeletonsAndMeshes()
 					
 					ProcessInverseBindpose(skinCluster, skeleton, parentNode);
 					ProcessSkeletalVertex(skinCluster, skeleton);
-					ProcessSkeletalIndexes(skeleton.skeletalVertexVector, skeleton.indexes);
+					//go trough every mesh and get indices
+					for (size_t i = 0; i < skeleton.MeshVector.size(); i++)
+					{
+						ProcessSkeletalIndexes(skeleton.MeshVector.at(i).skeletalVertexVector, skeleton.MeshVector.at(i).indexes);
+					}
+					
 					ProcessKeyframes(skinCluster, skeleton);
-					this->Skeletons.push_back(skeleton);
-
-
 				}
 				else //check if there is no skinCluster
 				{
@@ -198,51 +201,21 @@ void ModelAssembler::ProcessInverseBindpose(MFnSkinCluster& skinCluster, Skeleto
 			}
 		}
 
-		GetJointParentID2(jointDep, joint,skeleton.jointVector); //FIX ME MAYBE;
+		GetJointParentID(jointDep, joint,skeleton.jointVector); //FIX ME MAYBE;
 		skeleton.jointVector.push_back(joint);
 	} // end of joint
 }
 
-void ModelAssembler::GetJointParentID(MFnDependencyNode& jointDep, Joint& joint)
+
+void ModelAssembler::GetJointParentID(MFnDependencyNode & jointDep, Joint & currentJoint,vector<Joint>OtherJoints)
 {
-	MPlug messagePlug = jointDep.findPlug("message", &res);
-	MString nameJointMessage = messagePlug.name();
-
-	MPlugArray messageArray;
-	messagePlug.connectedTo(messageArray, false, true, &res);
-
-	if (messageArray.length() > 0)
-	{
-		MPlug memberPlug(messageArray[0]);
-		MString nameMember = memberPlug.name();
-		joint.ID = memberPlug.logicalIndex(&res);
-
-		MPlugArray parentArray;
-
-
-		memberPlug.connectedTo(parentArray, false, true, &res);
-		if (parentArray.length()>0)
-		{
-			MPlug parentPlug(parentArray[0]);
-
-			joint.parentID = parentPlug.logicalIndex(&res);
-			MString nameParent = parentPlug.name();
-		}
-
-	}
-	
-	//globalinversebindpose?
-}
-
-void ModelAssembler::GetJointParentID2(MFnDependencyNode & jointDep, Joint & currentJoint,vector<Joint>OtherJoints)
-{
-
+	//if we want child index that is possible too. using scale instead of inverse scale
 	MPlugArray jointArray;
 	MPlug inverseScale = jointDep.findPlug("inverseScale", &res); //just inorder to get parent
 	MString parentName;
 	currentJoint.ID = OtherJoints.size();
 	currentJoint.parentID = 0;
-	///MPlug scale = jointDep.findPlug("scale", &res); //used in order to get children
+	
 	
 	
 	inverseScale.connectedTo(jointArray, true, false, &res);
@@ -308,6 +281,7 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 
 	for (size_t i = 0; i < geometryCount; ++i) //if several meshes are connected go trough them all.
 	{
+		SkeletalMesh skeletalMesh;
 		unsigned int index = skinCluster.indexForOutputConnection(i, &res); 
 
 		MDagPath skinPath;  res = skinCluster.getPathAtIndex(index, skinPath); //get weights for each vertex {8 in a cube}
@@ -318,7 +292,7 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 		MString name = meshnode.name(); //for debuging purposes
 		std::array<char, 256> meshName;
 		memcpy(&meshName, name.asChar(), name.length() * sizeof(char)); 
-		skeleton.meshNames.push_back(meshName);
+		skeletalMesh.meshName = meshName;
 
 		//weights
 		vector<vertexDeform>VertexDeformVector = GetSkinWeightsList(skinPath, skinCluster, skeleton.jointVector);
@@ -388,8 +362,9 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 			nodeVertices.at(i).deformer = VertexDeformVector[ polygonVertexIDs[ triangleIndices[i]]];
 			//Vi kollar till vilken vertex trianglen pekar på och hämtar den vikten
 		}
-
-		skeleton.skeletalVertexVector = nodeVertices; //so far im only planing on having one list per skeleton.
+		skeletalMesh.skeletalVertexVector = nodeVertices;
+		skeleton.MeshVector.push_back(skeletalMesh);
+		//skeleton.skeletalVertexVector = nodeVertices; //so far im only planing on having one list per skeleton.
 	} //End of Current Mesh Looping to next
 }
 
@@ -511,6 +486,7 @@ void ModelAssembler::AssembleMaterials()
 
 		MFnDependencyNode materialNode(mNode);
 		MString materialName = materialNode.name();
+		memcpy(&tempMaterial.name, materialName.asChar(), materialName.length() * sizeof(char));
 
 		//Get MaterialNode Plugs
 		MPlug outColor = materialNode.findPlug("outColor"); //to go further in the plugs
@@ -604,6 +580,18 @@ void ModelAssembler::AssembleMaterials()
 	}
 }
 
+void ModelAssembler::ConnectMaterialsToMeshes()
+{
+	materials;
+	Skeletons;
+	for (Skeleton skeleton : Skeletons)
+	{
+		skeleton.MeshVector[0].meshName;
+		//det är fel på vectorn just nu.
+	}
+
+}
+
 
 
 std::array<char, 256> ModelAssembler::GetTexture(MPlugArray textureGroup)
@@ -615,7 +603,7 @@ std::array<char, 256> ModelAssembler::GetTexture(MPlugArray textureGroup)
 		MFnDependencyNode textureNode(textureGroup[i].node());
 		MString filename;
 		textureNode.findPlug("fileTextureName").getValue(filename);
-		memcpy(&result, filename.asChar(), sizeof(const char[256]));
+		memcpy(&result, filename.asChar(), filename.length() * sizeof(const char));
 	}
 	return result;
 }

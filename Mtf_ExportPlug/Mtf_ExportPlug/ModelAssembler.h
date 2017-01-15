@@ -60,14 +60,18 @@ namespace assembleStructs
 		//joints har koll på olika keyframes för olika lager
 	};
 
+	struct SkeletalMesh
+	{
+		std::array<char, 256> meshName;
+		vector<unsigned int> indexes;
+		vector<SkeletonVertex> skeletalVertexVector;
+	};
+
 	struct Skeleton
 	{
-		vector<std::array<char, 256> > meshNames;
-		//vector<char[256]> MeshNames;
-		//maybe have meshes?
-		vector<unsigned int> indexes;
+		vector<SkeletalMesh> MeshVector;
 		vector<Joint> jointVector;
-		vector<SkeletonVertex> skeletalVertexVector;
+		
 	};
 
 	//Vertex Compare Used for indexing
@@ -76,8 +80,8 @@ namespace assembleStructs
 
 	struct Material
 	{
+		std::array<char, 256> name;
 		vector<std::array<char, 256> > boundMeshes;
-
 		std::array<char, 256> textureFilepath;
 		std::array<char, 256> specularFilepath;
 		std::array<char, 256> diffuseFilepath;
@@ -134,14 +138,13 @@ private:
 	void AssembleMesh(MObject MObjectMeshNode);
 	void AssembleSkeletonsAndMeshes();
 	void AssembleMaterials();
+	void ConnectMaterialsToMeshes();
 
 	void ProcessInverseBindpose(MFnSkinCluster&, Skeleton&, MFnDependencyNode& parentNode); //gets inversebindPose and globalInverseBindpose
 	void ProcessSkeletalVertex (MFnSkinCluster& skinCluster, Skeleton& skeleton); //Gets vertices and weights for each triangleIndex
 	void ProcessSkeletalIndexes(vector<SkeletonVertex>& vertexVector, vector<unsigned int>& indexes); //Modifys vertexList and Adds indexes
-	
-	
-	void GetJointParentID(MFnDependencyNode& jointDep,Joint& joint); // gets the parents index Check this one probably needs updating!!
-	void GetJointParentID2(MFnDependencyNode & jointDep, Joint & currentJoint, vector<Joint>OtherJoints);
+	void GetJointParentID(MFnDependencyNode & jointDep, Joint & currentJoint, vector<Joint>OtherJoints); //gets the JointList index index of the joints parent
+
 	vector<vertexDeform> GetSkinWeightsList(MDagPath skinPath, MFnSkinCluster& skinCluster, vector<Joint>joints);
 	void ProcessKeyframes (MFnSkinCluster& skinCluster, Skeleton& skeleton);
 	std::array<char, 256> GetTexture(MPlugArray);
