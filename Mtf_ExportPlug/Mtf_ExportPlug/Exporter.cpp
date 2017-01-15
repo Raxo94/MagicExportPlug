@@ -52,7 +52,6 @@ void Exporter::writeModelsToFile(string outFilePath)
 
 void Exporter::writeMaterialsToFile(string outFilePath)
 {
-	;
 }
 
 void Exporter::prepareMeshData(assembleStructs::Mesh assembleMesh)

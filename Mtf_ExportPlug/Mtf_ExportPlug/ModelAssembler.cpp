@@ -495,7 +495,7 @@ void ModelAssembler::AssembleMaterials()
 		MPlug color = materialNode.findPlug("color"); //to get the color values
 		MPlug diffuse = materialNode.findPlug("diffuse"); //to get the diffuse of the material
 		MPlug specularColor = materialNode.findPlug("specularColor"); //to get the specular color of the material
-		
+		MPlug ShinyFactor = materialNode.findPlug("specularRollOff"); //to get the specular color of the material
 		//GetNormalMap plug
 		MPlug normalCamera = materialNode.findPlug("normalCamera");
 		normalCamera.connectedTo(bmpGroup, true, false, &res);
@@ -530,6 +530,14 @@ void ModelAssembler::AssembleMaterials()
 		MFnNumericData specularData(data);
 		specularData.getData(tempMaterial.specularColor[0], tempMaterial.specularColor[1], tempMaterial.specularColor[2]);
 		
+		//specularRollOff
+		ShinyFactor.getValue(tempMaterial.shinyFactor);
+
+		//diffuse Texture
+		diffuse.connectedTo(textureGroup, true, false, &res);
+		tempMaterial.diffuseFilepath = GetTexture(textureGroup);
+		if (textureGroup.length() == 0)
+			memcpy(&tempMaterial.diffuseFilepath, "NOTEXTURE", sizeof(const char[10]));
 		//specular texture
 		specularColor.connectedTo(textureGroup, true, false, &res); 
 		tempMaterial.specularFilepath = GetTexture(textureGroup); 

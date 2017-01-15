@@ -24,7 +24,10 @@ namespace assembleStructs
 	{
 		std::array<float, 3> pos;
 		std::array<float, 3> nor;
+		std::array<float, 3> tangent;
 		std::array<float, 2> uv;
+
+
 	};
 
 	struct SkeletonVertex
@@ -76,7 +79,7 @@ namespace assembleStructs
 		std::array<char, 256> normalFilepath;
 
 		float diffuse;
-
+		float shinyFactor;
 		std::array <float,3> color;
 		std::array <float, 3> specularColor;
 	};
