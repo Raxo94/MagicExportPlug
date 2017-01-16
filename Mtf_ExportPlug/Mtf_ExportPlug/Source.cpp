@@ -25,7 +25,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 	string outfileModel = "C:/Git/MagicExportPlug/Exports/";
 
 	Export.writeModelsToFile(outfileMesh);
-	//Export.writeMaterialsToFile(outfileModel);
+	Export.writeMaterialsToFile(outfileModel);
 
 	MGlobal::displayInfo("Maya plugin loaded!");
 	return MS::kSuccess;
