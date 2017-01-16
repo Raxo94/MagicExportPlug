@@ -132,12 +132,22 @@ void Exporter::writeModelsToFile(string outFilePath)
 
 
 	//Vertices
-	outFile.write((const char*)meshes.at(0).vertList.data(), sizeof(assembleStructs::Vertex) * meshes.at(0).vertList.size());
-	bufferSize += sizeof(assembleStructs::Vertex) * meshes.at(0).vertList.size();
-	
+	for (assembleStructs::Mesh mesh : meshes)
+	{
+		if (mesh.vertList.size() > 0)
+		{
+			outFile.write((const char*)mesh.vertList.data(), sizeof(assembleStructs::Vertex) * mesh.vertList.size());
+			bufferSize += sizeof(assembleStructs::Vertex) * mesh.vertList.size();
+		}	
+	}
+
 	//Indices
-	outFile.write((const char*)meshes.at(0).indexList.data(), sizeof(int) * meshes.at(0).indexList.size());
-	bufferSize += sizeof(int) * meshes.at(0).indexList.size();
+	for (assembleStructs::Mesh mesh : meshes)
+	{
+		outFile.write((const char*)mesh.indexList.data(), sizeof(int) * mesh.indexList.size());
+		bufferSize += sizeof(int) * mesh.indexList.size();
+	}
+	
 
 	//update dataHeader
 
