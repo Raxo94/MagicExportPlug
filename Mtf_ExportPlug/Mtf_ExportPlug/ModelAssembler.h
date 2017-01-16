@@ -60,6 +60,7 @@ namespace assembleStructs
 		MString name;
 		int animationStateCount;
 		std::vector<sImAnimationState> animationState;
+		MDagPath dagPath; //to be used only in assambler
 		//joints har koll på olika keyframes för olika lager
 	};
 
@@ -91,6 +92,17 @@ namespace assembleStructs
 		double rotation[4];
 	};
 
+	
+
+	
+
+	
+
+	struct sHierarchy
+	{
+		bool hasParentJoint = false;
+		bool hasParentMesh = false;
+	};
 	struct Mesh
 	{
 		Material material;
@@ -100,9 +112,9 @@ namespace assembleStructs
 		vector<unsigned int> indexes;
 		Transform transform;
 		MDagPath Meshpath; //to be used only in assambler
+		sHierarchy parent;
 
 	};
-
 	struct SkeletalMesh
 	{
 		Material material;
@@ -112,7 +124,28 @@ namespace assembleStructs
 		Transform transform;
 		MDagPath Meshpath; //to be used only in assambler
 	};
+	struct sJointChild
+	{
+		int parentSkeletonIndex = 0; //needed change hope still works
+		int parentJointIndex = 0; //needed change hope still works 
+	};
+	struct sMeshChild
+	{
+		int parentMeshIndex = 0; //this was changed
+	};
 
+	struct sPos
+	{
+		float x, y, z;
+	};
+
+	struct sBBox
+	{
+		sPos pos[8];
+		sHierarchy parent;
+		sJointChild jointParent;
+		sMeshChild meshParent;
+	};
 	struct Skeleton
 	{
 		vector<SkeletalMesh> MeshVector;
@@ -148,6 +181,7 @@ private:
 	void AssembleSkeletonsAndMeshes();
 	void AssembleMaterials();
 	void ConnectMaterialsToMeshes();
+	void GetChildrenBoundingBoxes(vector<Joint> joints);
 
 	void ProcessInverseBindpose(MFnSkinCluster&, Skeleton&, MFnDependencyNode& parentNode); //gets inversebindPose and globalInverseBindpose
 	void ProcessSkeletalVertex (MFnSkinCluster& skinCluster, Skeleton& skeleton); //Gets vertices and weights for each triangleIndex

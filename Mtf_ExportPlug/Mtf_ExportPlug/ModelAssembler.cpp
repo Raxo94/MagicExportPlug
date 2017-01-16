@@ -120,7 +120,13 @@ void ModelAssembler::AssembleMesh(MObject MObjectMeshNode,MObject Parent)
 	tempMesh.vertexCount = tempMesh.Vertices.size();
 	MFnTransform transform(Parent); //the parent is the transform
 	tempMesh.transform = GetTransform(transform);
+
+	int count = tempMesh.Meshpath.childCount(&res);
+	MFnDagNode hello(tempMesh.Meshpath);
+	count = hello.parentCount();
 	this->standardMeshes.push_back(tempMesh);
+
+	
 }
 
 void ModelAssembler::AssembleSkeletonsAndMeshes()
@@ -134,7 +140,27 @@ void ModelAssembler::AssembleSkeletonsAndMeshes()
 
 	for (; it.isDone() == false; it.next())
 	{
-		if (it.currentItem().hasFn(MFn::kMesh))
+		MFnDependencyNode testNode(it.currentItem());
+		MString testName = testNode.name();
+		MFnDagNode dagNode(it.currentItem());
+		int childCount = dagNode.childCount();
+		for (size_t i = 0; i < childCount; i++)
+		{
+			MObject child = dagNode.child(i);
+			MFnDependencyNode childNode(child);
+			MString childName = childNode.name();
+		}
+		
+		int parentCount = dagNode.parentCount();
+		for (size_t i = 0; i < parentCount; i++)
+		{
+			MObject parent = dagNode.parent(i);
+			MFnDependencyNode parentNode(parent);
+			MString parentName = parentNode.name();
+		}
+
+		//problemet kan lösa sig om jag kan hitta mina parents istället för mina barn.
+		if (it.currentItem().hasFn(MFn::kMesh)) // is this not kind of the issue?
 		{
 			if (parent.hasFn(MFn::kTransform))
 			{
@@ -146,23 +172,15 @@ void ModelAssembler::AssembleSkeletonsAndMeshes()
 				MFnSkinCluster skinCluster(skinClusterArray[0].node(), &res); //maybe we should make this loop trough all until it finds a skinCluster
 				if (res == true)
 				{
-
-					//Make sure it really is a skinCluster
 					MString name = skinCluster.name(&res);
-
-					//Get the joints
-					
+				
 					ProcessInverseBindpose(skinCluster, skeleton, parentNode);
 					ProcessSkeletalVertex(skinCluster, skeleton);
-					//go trough every mesh and get indices
 					for (size_t i = 0; i < skeleton.MeshVector.size(); i++)
 					{
 						ProcessSkeletalIndexes(skeleton.MeshVector.at(i).skeletalVertexVector, skeleton.MeshVector.at(i).indexes);
-						
 						MFnTransform transform= skeleton.MeshVector.at(i).Meshpath.transform();
 						skeleton.MeshVector.at(i).transform = GetTransform(transform);
-
-
 					}
 					
 					ProcessKeyframes(skinCluster, skeleton);
@@ -193,10 +211,32 @@ void ModelAssembler::ProcessInverseBindpose(MFnSkinCluster& skinCluster, Skeleto
 		joint.name = jointDep.name();
 		MString parentName = parentNode.name();
 
+		MFnDagNode dagNode(jointDep.object());
+		MString testName = dagNode.name();
+		int childCount = dagNode.childCount();
+		
+		for (size_t i = 0; i < childCount; i++)
+		{
+
+			MObject child = dagNode.child(i);
+			MFnDependencyNode childNode(child);
+			MString childName = childNode.name();
+
+			if (childNode.hasAttribute("BOUNDINGBOX"))
+			{
+				childName = childNode.name(); // i have found the bounding box. But what next?
+				////right now i go trough everything and check if there is a skincluster. That is indeed ok.
+				//however maybe i could go breadth first and then manually dive into every node.
+				//and if the node is a joint... Maybe.
+			}
+
+		}
+
+
 		MPlug bindPosePlug = jointDep.findPlug("bindPose", &res);
 		MPlug inverseModelMatrixPlug = parentNode.findPlug("worldInverseMatrix", &res);
 
-		
+	
 
 		MObject data;
 		res = bindPosePlug.getValue(data);
@@ -646,6 +686,15 @@ void ModelAssembler::ConnectMaterialsToMeshes()
 	
 	}
 	
+
+}
+
+void ModelAssembler::GetChildrenBoundingBoxes(vector<Joint> joints)
+{
+	for (size_t i = 0; i < joints.size(); i++)
+	{
+		;//joints.at(i).Meshpath
+	}
 
 }
 
