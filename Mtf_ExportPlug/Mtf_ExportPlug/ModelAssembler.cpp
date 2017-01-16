@@ -20,6 +20,11 @@ vector<Mesh>& ModelAssembler::GetMeshVector()
 	return standardMeshes;
 }
 
+vector<SkeletalMesh>& ModelAssembler::GetSkeletalMeshVector()
+{
+	return skeletalMeshes;
+}
+
 vector<Skeleton>& ModelAssembler::GetSkeletonVector()
 {
 	return Skeletons;
@@ -28,6 +33,11 @@ vector<Skeleton>& ModelAssembler::GetSkeletonVector()
 vector<Material>& ModelAssembler::GetMaterialVector()
 {
 	return materials;
+}
+
+vector<sBBox>& ModelAssembler::GetBoundingBoxVector()
+{
+	return BBoxes;
 }
 
 void ModelAssembler::AssembleMesh(MObject MObjectMeshNode,MObject Parent)
@@ -68,7 +78,7 @@ void ModelAssembler::AssembleMesh(MObject MObjectMeshNode,MObject Parent)
 				boundingBox.parent.hasParentJoint = true;
 				//boundingBox.jointParent.;
 			}
-			else if (type == "mesh")
+			if (type == "mesh")
 			{
 				boundingBox.parent.hasParentMesh = true;
 			}
@@ -89,114 +99,106 @@ void ModelAssembler::AssembleMesh(MObject MObjectMeshNode,MObject Parent)
 
 		}
 		
+	}
+	else
+	{
 
 
-		
+		Mesh tempMesh;
 
+
+		memcpy(&tempMesh.name, meshNode.name().asChar(), sizeof(const char[256]));//MeshName
+
+		vector<Vertex>nodeVertices;
+		MFloatPointArray pts;
+		MIntArray vertexCounts;
+		MIntArray polygonVertexIDs;
+		MFloatArray u, v;
+		MIntArray uvCounts;
+		MIntArray uvIDs;
+		MFloatVectorArray normals;
+		MFloatVectorArray tangents;
+		MIntArray triangleCountsOffsets;
+		MIntArray triangleIndices;
+		MIntArray triangleCounts;
+		MIntArray triangleVertexIDs;
+		MVector vertexNormal;
+		MIntArray normalList, normalCount;
+		MIntArray tangentList, tangentCount;
+
+		meshNode.getPoints(pts, MSpace::kObject);
+		meshNode.getUVs(u, v, 0);
+		meshNode.getAssignedUVs(uvCounts, uvIDs); //indices for UV:s
+
+		meshNode.getTriangleOffsets(triangleCountsOffsets, triangleIndices);
+		meshNode.getVertices(vertexCounts, polygonVertexIDs); //get vertex polygon indices
+
+
+		meshNode.getNormals(normals, MSpace::kObject);
+		meshNode.getTangents(tangents, MSpace::kObject);
+
+		nodeVertices.resize(triangleIndices.length());
+
+
+		meshNode.getNormalIds(normalCount, normalList);
+
+
+		//jag behöver en lista av faces och jag behöver få ut genom att ge vertex
+		//meshNode.getTangentId
+
+		int count = polygonVertexIDs.length();
+		count = pts.length();
+		//basicaly we are supposed to use pnts
+		for (unsigned int i = 0; i < triangleIndices.length(); i++)
+		{ //for each triangle index (36) in a box
+
+			nodeVertices.at(i).pos[0] = pts[polygonVertexIDs[triangleIndices[i]]].x;
+			nodeVertices.at(i).pos[1] = pts[polygonVertexIDs[triangleIndices[i]]].y;
+			nodeVertices.at(i).pos[2] = pts[polygonVertexIDs[triangleIndices[i]]].z;
+
+			//first is faceId then is vertex id.
+			// i need to know what face i am on...
+			//nodeVertices.at(i).tan[0] = tangents[polygonVertexIDs[triangleIndices[i]]].x;
+
+
+			nodeVertices.at(i).normal[0] = normals[normalList[triangleIndices[i]]].x;
+			nodeVertices.at(i).normal[1] = normals[normalList[triangleIndices[i]]].y;
+			nodeVertices.at(i).normal[2] = normals[normalList[triangleIndices[i]]].z;
+
+			nodeVertices.at(i).UV[0] = u[uvIDs[triangleIndices[i]]];
+			nodeVertices.at(i).UV[1] = v[uvIDs[triangleIndices[i]]];
+
+
+			//indexing: if the tempMesh contains current vertex we list the earlier one in the indexlist;
+			bool VertexIsUnique = true;
+			for (size_t j = 0; j < tempMesh.vertList.size(); j++)
+			{
+
+				if (nodeVertices.at(i) == tempMesh.vertList.at(j))
+				{
+					tempMesh.indexList.push_back(j);
+					VertexIsUnique = false;
+					break; // get out of loop
+				}
+
+			}
+			if (VertexIsUnique == true)
+			{
+				tempMesh.indexList.push_back(tempMesh.vertList.size());
+				tempMesh.vertList.push_back(nodeVertices.at(i));
+			}
+			//end of indexing
+
+
+		}//Vertex END
+
+		MFnTransform transform(Parent); //the parent is the transform
+		tempMesh.transform = GetTransform(transform);
+
+
+		this->standardMeshes.push_back(tempMesh);
 
 	}
-	
-
-
-
-
-	
-	Mesh tempMesh;
-
-
-	memcpy(&tempMesh.MeshName, meshNode.name().asChar(), sizeof(const char[256]));//MeshName
-
-	vector<Vertex>nodeVertices;
-	MFloatPointArray pts;
-	MIntArray vertexCounts;
-	MIntArray polygonVertexIDs;
-	MFloatArray u, v;
-	MIntArray uvCounts;
-	MIntArray uvIDs;
-	MFloatVectorArray normals;
-	MFloatVectorArray tangents;
-	MIntArray triangleCountsOffsets;
-	MIntArray triangleIndices;
-	MIntArray triangleCounts;
-	MIntArray triangleVertexIDs;
-	MVector vertexNormal;
-	MIntArray normalList, normalCount;
-	MIntArray tangentList, tangentCount;
-
-	meshNode.getPoints(pts, MSpace::kObject);
-	meshNode.getUVs(u, v, 0);
-	meshNode.getAssignedUVs(uvCounts, uvIDs); //indices for UV:s
-
-	meshNode.getTriangleOffsets(triangleCountsOffsets, triangleIndices);
-	meshNode.getVertices(vertexCounts, polygonVertexIDs); //get vertex polygon indices
-
-
-	meshNode.getNormals(normals, MSpace::kObject);
-	meshNode.getTangents(tangents, MSpace::kObject);
-
-	nodeVertices.resize(triangleIndices.length());
-
-
-	meshNode.getNormalIds(normalCount, normalList);
-	
-	
-	//jag behöver en lista av faces och jag behöver få ut genom att ge vertex
-	//meshNode.getTangentId
-
-	int count = polygonVertexIDs.length();
-	count = pts.length();
-	//basicaly we are supposed to use pnts
-	for (unsigned int i = 0; i < triangleIndices.length(); i++)
-	{ //for each triangle index (36) in a box
-
-		nodeVertices.at(i).pos[0] = pts[polygonVertexIDs[triangleIndices[i]]].x;
-		nodeVertices.at(i).pos[1] = pts[polygonVertexIDs[triangleIndices[i]]].y;
-		nodeVertices.at(i).pos[2] = pts[polygonVertexIDs[triangleIndices[i]]].z;
-		
-		//first is faceId then is vertex id.
-		// i need to know what face i am on...
-		//nodeVertices.at(i).tan[0] = tangents[polygonVertexIDs[triangleIndices[i]]].x;
-
-
-		nodeVertices.at(i).nor[0] = normals[normalList[triangleIndices[i]]].x;
-		nodeVertices.at(i).nor[1] = normals[normalList[triangleIndices[i]]].y;
-		nodeVertices.at(i).nor[2] = normals[normalList[triangleIndices[i]]].z;
-
-		nodeVertices.at(i).uv[0] = u[uvIDs[triangleIndices[i]]];
-		nodeVertices.at(i).uv[1] = v[uvIDs[triangleIndices[i]]];
-
-
-		//indexing: if the tempMesh contains current vertex we list the earlier one in the indexlist;
-		bool VertexIsUnique = true;
-		for (size_t j = 0; j < tempMesh.Vertices.size(); j++)
-		{
-
-			if (nodeVertices.at(i) == tempMesh.Vertices.at(j))
-			{
-				tempMesh.indexes.push_back(j);
-				VertexIsUnique = false;
-				break; // get out of loop
-			}
-
-		}
-		if (VertexIsUnique == true)
-		{
-			tempMesh.indexes.push_back(tempMesh.Vertices.size());
-			tempMesh.Vertices.push_back(nodeVertices.at(i));
-		}
-		//end of indexing
-
-
-	}//Vertex END
-
-	tempMesh.vertexCount = tempMesh.Vertices.size();
-	MFnTransform transform(Parent); //the parent is the transform
-	tempMesh.transform = GetTransform(transform);
-
-
-	this->standardMeshes.push_back(tempMesh);
-
-	
 }
 
 void ModelAssembler::AssembleSkeletonsAndMeshes()
@@ -251,7 +253,7 @@ void ModelAssembler::AssembleSkeletonsAndMeshes()
 					for (size_t i = 0; i < skeleton.MeshVector.size(); i++)
 					{
 						skeleton.MeshVector.at(i).skeletonIndex = Skeletons.size();
-						ProcessSkeletalIndexes(skeleton.MeshVector.at(i).skeletalVertexVector, skeleton.MeshVector.at(i).indexes);
+						ProcessSkeletalIndexes(skeleton.MeshVector.at(i).skelVertList, skeleton.MeshVector.at(i).indexList);
 						MFnTransform transform= skeleton.MeshVector.at(i).Meshpath.transform();
 						skeleton.MeshVector.at(i).transform = GetTransform(transform);
 					}
@@ -411,14 +413,13 @@ vector<vertexDeform> ModelAssembler::GetSkinWeightsList(MDagPath skinPath,MFnSki
 
 void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton& skeleton)
 {
-
-	//right now we dont have the parent.
-
 	unsigned int geometryCount = skinCluster.numOutputConnections();
 
 	for (size_t i = 0; i < geometryCount; ++i) //if several meshes are connected go trough them all.
 	{
-		SkeletalMesh skeletalMesh;
+		Mesh skeletalMesh;
+		skeletalMesh.isAnimated = true;
+
 		unsigned int index = skinCluster.indexForOutputConnection(i, &res); 
 
 		MDagPath skinPath;  res = skinCluster.getPathAtIndex(index, skinPath); //get weights for each vertex {8 in a cube}
@@ -430,7 +431,7 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 		MString name = meshnode.name(); //for debuging purposes
 		std::array<char, 256> meshName;
 		memcpy(&meshName, name.asChar(), name.length() * sizeof(char)); 
-		skeletalMesh.meshName = meshName;
+		skeletalMesh.name = meshName;
 
 		//weights
 		vector<vertexDeform>VertexDeformVector = GetSkinWeightsList(skinPath, skinCluster, skeleton.jointVector);
@@ -464,44 +465,26 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 		MIntArray triangleCountsOffsets;
 		meshNode.getTriangleOffsets(triangleCountsOffsets, triangleIndices);
 		nodeVertices.resize(triangleIndices.length());
-
-	
-		//for debuging purposes
-		//triangle indice är längre än polygon ids...Men triangle indice refererar till polygon ids.
-		vector<unsigned int> indexes;
-		vector<unsigned int> PolygonIDs;
-		int TriangleIndicerSize = triangleIndices.length();
-		int PolygonIDsSize = polygonVertexIDs.length();
-		for (size_t i = 0; i < triangleIndices.length(); i++)
-			indexes.push_back(triangleIndices[i]);
-		
-		for (size_t i = 0; i < polygonVertexIDs.length(); i++)
-			PolygonIDs.push_back(polygonVertexIDs[i]);
-		//end of debugingPurposes
-
-
 		//now lets get all triangleVertexes.
 		for (unsigned int i = 0; i < triangleIndices.length(); i++)
 		{ 
 
-			int JAG = polygonVertexIDs[triangleIndices[i]];
+			nodeVertices.at(i).vert.pos[0] = pts[polygonVertexIDs[triangleIndices[i]]].x;
+			nodeVertices.at(i).vert.pos[1] = pts[polygonVertexIDs[triangleIndices[i]]].y;
+			nodeVertices.at(i).vert.pos[2] = pts[polygonVertexIDs[triangleIndices[i]]].z;
 
-			nodeVertices.at(i).pos[0] = pts[polygonVertexIDs[triangleIndices[i]]].x;
-			nodeVertices.at(i).pos[1] = pts[polygonVertexIDs[triangleIndices[i]]].y;
-			nodeVertices.at(i).pos[2] = pts[polygonVertexIDs[triangleIndices[i]]].z;
+			nodeVertices.at(i).vert.normal[0] = normals[normalList[triangleIndices[i]]].x;
+			nodeVertices.at(i).vert.normal[1] = normals[normalList[triangleIndices[i]]].y;
+			nodeVertices.at(i).vert.normal[2] = normals[normalList[triangleIndices[i]]].z;
 
-			nodeVertices.at(i).nor[0] = normals[normalList[triangleIndices[i]]].x;
-			nodeVertices.at(i).nor[1] = normals[normalList[triangleIndices[i]]].y;
-			nodeVertices.at(i).nor[2] = normals[normalList[triangleIndices[i]]].z;
-
-			nodeVertices.at(i).uv[0] = u[uvIDs[triangleIndices[i]]];
-			nodeVertices.at(i).uv[1] = v[uvIDs[triangleIndices[i]]];
+			nodeVertices.at(i).vert.UV[0] = u[uvIDs[triangleIndices[i]]];
+			nodeVertices.at(i).vert.UV[1] = v[uvIDs[triangleIndices[i]]];
 
 			nodeVertices.at(i).deformer = VertexDeformVector[ polygonVertexIDs[ triangleIndices[i]]];
 
 			//Vi kollar till vilken vertex trianglen pekar på och hämtar den vikten
 		}
-		skeletalMesh.skeletalVertexVector = nodeVertices;
+		skeletalMesh.skelVertList = nodeVertices;
 		skeleton.MeshVector.push_back(skeletalMesh);
 		//skeleton.skeletalVertexVector = nodeVertices; //so far im only planing on having one list per skeleton.
 	} //End of Current Mesh Looping to next
@@ -509,7 +492,7 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 
 
 
-void ModelAssembler::ProcessSkeletalIndexes(vector<SkeletonVertex>& unfilteredVertexVector, vector<unsigned int>& indexes)
+void ModelAssembler::ProcessSkeletalIndexes(vector<SkeletonVertex>& unfilteredVertexVector, vector<int>& indexes)
 {
 	vector<SkeletonVertex> UniqueVertexes;
 
@@ -740,7 +723,7 @@ void ModelAssembler::ConnectMaterialsToMeshes()
 			{
 				for (size_t j = 0; j < Skeletons.at(i).MeshVector.size(); j++)
 				{
-					if (boundMeshName == Skeletons.at(i).MeshVector.at(j).meshName)
+					if (boundMeshName == Skeletons.at(i).MeshVector.at(j).name)
 						Skeletons.at(i).MeshVector.at(j).material = material;
 				} //end of skeletal meshes
 
@@ -749,7 +732,7 @@ void ModelAssembler::ConnectMaterialsToMeshes()
 
 			for (size_t j = 0; j <standardMeshes.size(); j++)
 			{
-				if (boundMeshName == standardMeshes.at(j).MeshName)
+				if (boundMeshName == standardMeshes.at(j).name)
 				{
 					standardMeshes.at(j).material = material;
 				}
@@ -825,9 +808,9 @@ Transform ModelAssembler::GetTransform(MFnTransform & transform)
 
 {
 	Transform result;
-	result.translation[0] = transform.getTranslation(MSpace::kTransform).x;
-	result.translation[1] = transform.getTranslation(MSpace::kTransform).y;
-	result.translation[2] = transform.getTranslation(MSpace::kTransform).z;
+	result.pos[0] = transform.getTranslation(MSpace::kTransform).x;
+	result.pos[1] = transform.getTranslation(MSpace::kTransform).y;
+	result.pos[2] = transform.getTranslation(MSpace::kTransform).z;
 
 	double dScale[3]; float fScale[3];
 	transform.getScale(dScale);
@@ -836,7 +819,7 @@ Transform ModelAssembler::GetTransform(MFnTransform & transform)
 	result.scale[1] = dScale[1];
 	result.scale[2] = dScale[2];
 
-	transform.getRotationQuaternion(result.rotation[0], result.rotation[1], result.rotation[2], result.rotation[3], MSpace::kTransform);
+	transform.getRotationQuaternion(result.Qrotation[0], result.Qrotation[1], result.Qrotation[2], result.Qrotation[3], MSpace::kTransform);
 
 	return result;
 }
@@ -846,9 +829,9 @@ bool assembleStructs::operator==(const assembleStructs::Vertex & left, const ass
 {
 	if (left.pos == right.pos)
 	{
-		if (left.nor == right.nor)
+		if (left.normal == right.normal)
 		{
-			if (left.uv == right.uv)
+			if (left.UV == right.UV)
 				return true;
 		}
 	}
@@ -858,11 +841,11 @@ bool assembleStructs::operator==(const assembleStructs::Vertex & left, const ass
 
 bool assembleStructs::operator==(const assembleStructs::SkeletonVertex & left, const assembleStructs::SkeletonVertex & right)
 {
-	if (left.pos == right.pos)
+	if (left.vert.pos == right.vert.pos)
 	{
-		if (left.nor == right.nor)
+		if (left.vert.normal == right.vert.normal)
 		{
-			if (left.uv == right.uv)
+			if (left.vert.UV == right.vert.UV)
 			{
 				if (left.deformer.influences == right.deformer.influences)
 				{

@@ -6,11 +6,12 @@
 #include <vector>
 #include <array>
 #include <sstream>
+#include "ExportHeaders.h"
 
 
 using namespace std;
 
-#define NOTSET -1337
+
 namespace assembleStructs
 {
 	struct vertexDeform
@@ -22,30 +23,18 @@ namespace assembleStructs
 
 	struct Vertex
 	{
-		std::array<float, 3> pos;
-		std::array<float, 3> nor;
-		std::array<float, 3> tan;
-		std::array<float, 2> uv;
-
-
+		std::array<float, 3>  pos;
+		std::array<float, 3>  normal;
+		std::array<float, 2>  UV;
+		std::array<float, 3>  tangent;
 	};
 
 	struct SkeletonVertex
 	{
-		std::array<float, 3> pos;
-		std::array<float, 3> nor;
-		std::array<float, 2> uv;
-		
+		Vertex vert;
 		vertexDeform deformer;
 	};
 
-	struct sKeyFrame
-	{
-		float keyTime;
-		float keyTranslate[3];
-		float keyRotate[4];
-		float keyScale[3];
-	};
 
 	struct sImAnimationState
 	{
@@ -60,7 +49,9 @@ namespace assembleStructs
 		MString name;
 		int animationStateCount;
 		std::vector<sImAnimationState> animationState;
-		MDagPath dagPath; //to be used only in assambler
+		MDagPath dagPath;
+		
+		//to be used only in assambler
 		//joints har koll på olika keyframes för olika lager
 	};
 
@@ -87,69 +78,49 @@ namespace assembleStructs
 
 	struct Transform
 	{
-		std::array <float,3> translation;
-		std::array <float,3> scale;
-		double rotation[4];
+		std::array <float, 3> pos;
+		std::array <float, 3> rot;
+		std::array <float, 3> scale;
+
+		double Qrotation[4];
 	};
 
-	
 
-	
-
-	
-
-	struct sHierarchy
-	{
-		bool hasParentJoint = false;
-		bool hasParentMesh = false;
-	};
 	struct Mesh
 	{
+		int skeletonIndex;
+		int materialID;
 		Material material;
-		std::array<char, 256> MeshName;
-		unsigned int vertexCount;
-		vector<Vertex> Vertices;
-		vector<unsigned int> indexes;
-		Transform transform;
-		MDagPath Meshpath; //to be used only in assambler
 		sHierarchy parent;
+		sJointChild parentJoint;
+		sMeshChild parentMesh;
+		std::array<char, 256> name;
+
+		//This mesh's local transform
+		Transform transform;
+
+		std::vector<Vertex> vertList;
+		std::vector<SkeletonVertex> skelVertList;
+		std::vector<int> indexList;
+		int uniqueId;
+		bool isAnimated = false;
+		MDagPath Meshpath; //to be used only in assambler
 
 	};
 	struct SkeletalMesh
 	{
 		Material material;
 		std::array<char, 256> meshName;
-		vector<unsigned int> indexes;
-		vector<SkeletonVertex> skeletalVertexVector;
+		vector<int> indexes;
+		
 		Transform transform;
 		MDagPath Meshpath; //to be used only in assambler
 		unsigned int skeletonIndex;
 	};
-	struct sJointChild
-	{
-		int parentSkeletonIndex = NOTSET; //needed change hope still works
-		int parentJointIndex = NOTSET; //needed change hope still works 
-	};
-	struct sMeshChild
-	{
-		int parentMeshIndex = 0; //this was changed
-	};
 
-	struct sPos
-	{
-		float x, y, z;
-	};
-
-	struct sBBox
-	{
-		sPos pos[8];
-		sHierarchy parent;
-		sJointChild jointParent;
-		sMeshChild meshParent;
-	};
 	struct Skeleton
 	{
-		vector<SkeletalMesh> MeshVector;
+		vector<Mesh> MeshVector;
 		vector<Joint> jointVector;
 
 	};
@@ -167,14 +138,17 @@ public:
 	~ModelAssembler();
 
 	vector<Mesh>&GetMeshVector();
+	vector<SkeletalMesh>&GetSkeletalMeshVector();
 	vector<Skeleton>&GetSkeletonVector();
 	vector<Material>&GetMaterialVector();
+	vector<sBBox>&GetBoundingBoxVector();
+	
 
 private:
 	//Variables
 	MStatus res;
 	vector<Mesh> standardMeshes;
-	vector<SkeletalMesh> skeletalMesh; //not yet used 
+	vector<SkeletalMesh> skeletalMeshes; //not yet used 
 	vector<Skeleton> Skeletons;
 	vector<Material> materials;
 	vector<sBBox> BBoxes;
@@ -188,7 +162,7 @@ private:
 
 	void ProcessInverseBindpose(MFnSkinCluster&, Skeleton&, MFnDependencyNode& parentNode); //gets inversebindPose and globalInverseBindpose
 	void ProcessSkeletalVertex (MFnSkinCluster& skinCluster, Skeleton& skeleton); //Gets vertices and weights for each triangleIndex
-	void ProcessSkeletalIndexes(vector<SkeletonVertex>& vertexVector, vector<unsigned int>& indexes); //Modifys vertexList and Adds indexes
+	void ProcessSkeletalIndexes(vector<SkeletonVertex>& vertexVector, vector<int>& indexes); //Modifys vertexList and Adds indexes
 	void GetJointParentID(MFnDependencyNode & jointDep, Joint & currentJoint, vector<Joint>OtherJoints); //gets the JointList index index of the joints parent
 
 	vector<vertexDeform> GetSkinWeightsList(MDagPath skinPath, MFnSkinCluster& skinCluster, vector<Joint>joints);

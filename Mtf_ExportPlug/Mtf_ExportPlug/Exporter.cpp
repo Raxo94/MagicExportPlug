@@ -28,112 +28,116 @@ void Exporter::writeModelsToFile(string outFilePath)
 
 	//There are no "Models" right now... So a temporary solution where each mesh is thought of as a model ensues
 	//There are also no boundingboxes... So boundingoxes is set to 0 for the moment
-	//Also no skeletons
 
 	std::vector<assembleStructs::Material> mat = assamble->GetMaterialVector();
 	std::vector<assembleStructs::Mesh> meshes = assamble->GetMeshVector();
 	std::vector<assembleStructs::Skeleton> skel = assamble->GetSkeletonVector();
-	std::vector<assembleStructs::SkeletalMesh> skelMeshes = skel.at(0).MeshVector;
+	//std::vector<assembleStructs::SkeletalMesh> skelMeshes = skel.at(0).MeshVector;
 
-	for (int i = 0; i < meshes.size(); i++)
+	//std::string outPath = outFilePath + std::string(&meshes.at(0).name + ".model");
+	std::ofstream outFile(outFilePath + std::string(&meshes.at(0).name[0]) + ".model", std::ofstream::binary); //output file stream
+
+	//Dataheader
+	#pragma region dataHeader
+
+	int dataSize = 0;
+	int bufferSize = 0;
+	outFile.write((const char*)&dataSize, sizeof(int));
+	outFile.write((const char*)&bufferSize, sizeof(int));
+
+	//Modelheader
+	hModel expModel = hModel{};
+	expModel.numMeshes = assamble->GetMeshVector().size();
+	expModel.numBBoxes = assamble->GetBoundingBoxVector().size();
+	expModel.numSkeletons = assamble->GetSkeletonVector().size();
+	expModel.TYPE = eModelType::STATIC;
+
+	for (Skeleton skeleton : assamble->GetSkeletonVector())
 	{
-		std::string outPath = outFilePath + std::string(&meshes.at(i).MeshName[0]) + ".model";
-		std::ofstream outFile(outFilePath + std::string(&meshes.at(i).MeshName[0]) + ".model", std::ofstream::binary); //output file stream
-		//Dataheader
-		int dataSize = 0;
-		int bufferSize = 0;
-		outFile.write((const char*)&dataSize, sizeof(int));
-		outFile.write((const char*)&bufferSize, sizeof(int));
+		expModel.TYPE = ANIMATED;
+		expModel.numJoints += skeleton.jointVector.size();
+		for (Joint joint : skeleton.jointVector)
+		{
+			expModel.numAnimationStates = skeleton.jointVector.at(0).animationState.size();
+			for (int i = 0; i < joint.animationState.size(); i++)
+			{
+				expModel.numKeyframes += joint.animationState.at(i).keyList.size();
+			}
+		}
+	}
+	for (assembleStructs::Mesh standardMesh:assamble->GetMeshVector())
+	{
+		expModel.numVertices += standardMesh.vertList.size();
+		expModel.numIndices += standardMesh.indexList.size();
+	}
 
-		hModel expModel = hModel{};
-		expModel.numMeshes = 1;
-		expModel.numBBoxes = 0;
-		expModel.numSkeletons = 0;
-
-		expModel.numJoints = 0;
-		expModel.numAnimationStates = 0;
-		expModel.numKeyframes = 0;
+	for (assembleStructs::Mesh skeletalMesh : assamble->GetMeshVector())
+	{
+		expModel.numSkeletonVertices += skeletalMesh.skelVertList.size();
+		expModel.numIndices += skeletalMesh.indexList.size();
+	}
+	
 		
-		expModel.numVertices = meshes.at(i).vertexCount;
-		expModel.numSkeletonVertices = 0;
-		expModel.numIndices = meshes.at(i).indexes.size();
 
-		expModel.TYPE = eModelType::STATIC;
+	//Materials are in the importer stored in meshes, for the engine they are stored in models.
+	const char* NewMaterialName = &meshes.at(0).material.name[0];
+	memcpy(expModel.materialName, &meshes.at(0).material.name[0], 22);
+	memcpy(&expModel.materialName[strlen(NewMaterialName)], ".material", 10);
 
-		const char* popo = &meshes.at(i).material.name[0];
-		memcpy(expModel.materialName, &meshes.at(i).material.name[0], 22);
-		memcpy(&expModel.materialName[strlen(popo)], ".material", 10);
+	outFile.write((const char*)&expModel, sizeof(hModel));
 
-		outFile.write((const char*)&expModel, sizeof(hModel));
+	#pragma endregion END OF DATAHEADER
 
-		//Offsets
-		sOffset currOffset = {};
-		for (int j = 0; j < 1; j++)
-		{
-			dataSize += sizeof(sOffset);
-			outFile.write((const char*)&currOffset, sizeof(sOffset));
-			currOffset.vertex += meshes.at(i).vertexCount;
-			currOffset.skeletonVertex += 0;
-			currOffset.index += meshes.at(i).indexes.size();
-		}
-
-		//Meshes
-		hMesh expMesh;
-		for (int j = 0; j < 1; j++)
-		{
-			dataSize += sizeof(hMesh);
-			expMesh.numAnimVertices = 0;
-			expMesh.numVertices = meshes.at(i).vertexCount;
-			expMesh.numIndexes = meshes.at(i).indexes.size();
-			expMesh.parent = sHierarchy();
-			
-			memcpy(expMesh.pos, &meshes.at(i).transform.translation[0], 3);
-			memcpy(expMesh.rot, &meshes.at(i).transform.rotation[0], 3);
-			memcpy(expMesh.scale, &meshes.at(i).transform.scale[0], 3);
-
-			expMesh.parentJoint = sJointChild();
-			expMesh.parentMesh = sMeshChild();
-
-			outFile.write((const char*)&expMesh, sizeof(hMesh));
-		}
-
-		//Boundingboxes
-		//There are no boundingboxes
-
-		//Vertices
-		outFile.write((const char*)meshes.at(i).Vertices.data(), sizeof(assembleStructs::Vertex) * meshes.at(i).Vertices.size());
-		bufferSize += sizeof(assembleStructs::Vertex) * meshes.at(i).Vertices.size();
-		//Indices
-		outFile.write((const char*)meshes.at(i).indexes.data(), sizeof(int) * meshes.at(i).indexes.size());
-		bufferSize += sizeof(int) * meshes.at(i).indexes.size();
-
-		//update dataHeader
-		outFile.seekp(std::ios::beg);
-		outFile.write((const char*)&dataSize, sizeof(int));
-		outFile.write((const char*)&bufferSize, sizeof(int));
-
-		outFile.close();
-	}
-	//One duplicate loop for skeletal meshes
-	for (int i = 0; i < skelMeshes.size(); i++)
+	//Offsets
+	sOffset currOffset = {};
+	
+	for (assembleStructs::Mesh mesh : meshes)
 	{
-		std::ofstream outFile(outFilePath, std::ofstream::binary); //output file stream
-		int dataSize = 0;
-		int bufferSize = 0;
-		////Skeletons
-		//hSkeleton expSkeleton;
-		//for (int j = 0; j < skel.size(); j++)
-		//{
-		//	expSkeleton.jointOffset = jointCounter * sizeof(hJoint);
-		//	expSkeleton.jointCount = skel.at(j).jointVector.size();
-		//	outFile.write((const char*)&expSkeleton, sizeof(hSkeleton));
-		//	dataSize += sizeof(hSkeleton);
-		//	jointCounter += skel.at(j).jointVector.size();
-		//}
-		//
-		//outFile.close();
+		dataSize += sizeof(sOffset);
+		outFile.write((const char*)&currOffset, sizeof(sOffset));
+		currOffset.vertex += mesh.vertList.size();
+		currOffset.skeletonVertex += 0;
+		currOffset.index += mesh.indexList.size();
 	}
+
+	//Meshes
+	hMesh expMesh;
+	for (assembleStructs::Mesh mesh : meshes)
+	{
+		dataSize += sizeof(hMesh);
+		expMesh.numAnimVertices = 0;
+		expMesh.numVertices = mesh.vertList.size();
+		expMesh.numIndexes = mesh.indexList.size();
+		expMesh.parent = sHierarchy();
+			
+		memcpy(expMesh.pos, &mesh.transform.pos, 3);
+		memcpy(expMesh.rot, &mesh.transform.rot, 3);
+		memcpy(expMesh.scale,&mesh.transform.scale, 3);
+
+		expMesh.parentJoint = sJointChild();
+		expMesh.parentMesh = sMeshChild();
+
+		outFile.write((const char*)&expMesh, sizeof(hMesh));
+	}
+
+	//Boundingboxes
+	//There are no boundingboxes
+
+	////Vertices
+	//outFile.write((const char*)meshes.at(0).Vertices.data(), sizeof(assembleStructs::Vertex) * meshes.at(0).Vertices.size());
+	//bufferSize += sizeof(assembleStructs::Vertex) * meshes.at(i).Vertices.size();
+	//
+	////Indices
+	//outFile.write((const char*)meshes.at(i).indexes.data(), sizeof(int) * meshes.at(i).indexes.size());
+	//bufferSize += sizeof(int) * meshes.at(i).indexes.size();
+
+	//update dataHeader
+	outFile.seekp(std::ios::beg);
+	outFile.write((const char*)&dataSize, sizeof(int));
+	outFile.write((const char*)&bufferSize, sizeof(int));
+	outFile.close();
 }
+
 
 void Exporter::writeMaterialsToFile(string outFilePath)
 {

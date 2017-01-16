@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <array>
-#include "ModelAssembler.h"
+
 enum eObjectType
 {
 	MODEL,
@@ -26,7 +26,7 @@ enum eLightType
 };
 
 
-
+#define NOTSET -1337
 struct sOffset
 {
 	int joint, vertex, index, skeletonVertex;
@@ -70,25 +70,25 @@ struct hSkeleton
 	int jointCount;
 	int jointOffset;
 };
-//struct sPos
-//{
-//	float x, y, z;
-//};
-//
-//struct sHierarchy
-//{
-//	bool hasParentJoint = false;
-//	bool hasParentMesh = false;
-//};
-//struct sJointChild
-//{
-//	int parentSkeletonIndex = NOTSET;
-//	int parentJointIndex = NOTSET;
-//};
-//struct sMeshChild
-//{
-//	int parentMeshIndex = NOTSET;
-//};
+struct sPos
+{
+	float x, y, z;
+};
+
+struct sHierarchy
+{
+	bool hasParentJoint = false;
+	bool hasParentMesh = false;
+};
+struct sJointChild
+{
+	int parentSkeletonIndex = NOTSET;
+	int parentJointIndex = NOTSET;
+};
+struct sMeshChild
+{
+	int parentMeshIndex = NOTSET;
+};
 
 struct sBBox
 {
@@ -143,15 +143,15 @@ type is STATIC
 */
 struct hModel
 {
-	int numMeshes;
-	int numBBoxes;
-	int numSkeletons;
-	int numJoints;
-	int numAnimationStates;
-	int numKeyframes;
-	int numVertices;
-	int numSkeletonVertices;
-	int numIndices;
+	int numMeshes=0;
+	int numBBoxes=0;
+	int numSkeletons=0;
+	int numJoints=0;
+	int numAnimationStates=0;
+	int numKeyframes=0;
+	int numVertices =0;
+	int numSkeletonVertices=0;
+	int numIndices=0;
 
 	eModelType TYPE = eModelType::STATIC;
 
