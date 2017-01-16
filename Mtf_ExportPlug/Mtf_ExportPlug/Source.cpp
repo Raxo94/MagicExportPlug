@@ -20,9 +20,9 @@ EXPORT MStatus initializePlugin(MObject obj)
 	}
 
 	Exporter Export;
-	string outfileMesh = "C:/Git_Repos/MagicExportPlug/Exports/";
+	string outfileMesh = "C:/Git/MagicExportPlug/Exports/";
 	//put a for loop going trough every material in export
-	string outfileModel = "C:/Git_Repos/MagicExportPlug/Exports/";
+	string outfileModel = "C:/Git/MagicExportPlug/Exports/";
 
 	Export.writeModelsToFile(outfileMesh);
 	Export.writeMaterialsToFile(outfileModel);

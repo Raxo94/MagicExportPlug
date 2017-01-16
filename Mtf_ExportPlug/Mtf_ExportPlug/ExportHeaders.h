@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <array>
+#include "ModelAssembler.h"
 enum eObjectType
 {
 	MODEL,
@@ -69,25 +70,25 @@ struct hSkeleton
 	int jointCount;
 	int jointOffset;
 };
-struct sPos
-{
-	float x, y, z;
-};
-
-struct sHierarchy
-{
-	bool hasParentJoint = false;
-	bool hasParentMesh = false;
-};
-struct sJointChild
-{
-	int parentSkeletonIndex = NOTSET;
-	int parentJointIndex = NOTSET;
-};
-struct sMeshChild
-{
-	int parentMeshIndex = NOTSET;
-};
+//struct sPos
+//{
+//	float x, y, z;
+//};
+//
+//struct sHierarchy
+//{
+//	bool hasParentJoint = false;
+//	bool hasParentMesh = false;
+//};
+//struct sJointChild
+//{
+//	int parentSkeletonIndex = NOTSET;
+//	int parentJointIndex = NOTSET;
+//};
+//struct sMeshChild
+//{
+//	int parentMeshIndex = NOTSET;
+//};
 
 struct sBBox
 {

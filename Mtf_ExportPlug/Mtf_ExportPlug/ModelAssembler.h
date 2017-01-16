@@ -24,8 +24,10 @@ namespace assembleStructs
 	{
 		std::array<float, 3> pos;
 		std::array<float, 3> nor;
+		std::array<float, 3> tan;
 		std::array<float, 2> uv;
-		std::array<float, 3> tangent; //<--- IS NEEDED
+
+
 	};
 
 	struct SkeletonVertex
@@ -58,6 +60,7 @@ namespace assembleStructs
 		MString name;
 		int animationStateCount;
 		std::vector<sImAnimationState> animationState;
+		MDagPath dagPath; //to be used only in assambler
 		//joints har koll på olika keyframes för olika lager
 	};
 
@@ -77,7 +80,7 @@ namespace assembleStructs
 		std::array<char, 256> normalFilepath;
 
 		float diffuse;
-
+		float shinyFactor;
 		std::array <float,3> color;
 		std::array <float, 3> specularColor;
 	};
@@ -89,6 +92,17 @@ namespace assembleStructs
 		double rotation[4];
 	};
 
+	
+
+	
+
+	
+
+	struct sHierarchy
+	{
+		bool hasParentJoint = false;
+		bool hasParentMesh = false;
+	};
 	struct Mesh
 	{
 		Material material;
@@ -97,17 +111,41 @@ namespace assembleStructs
 		vector<Vertex> Vertices;
 		vector<unsigned int> indexes;
 		Transform transform;
+		MDagPath Meshpath; //to be used only in assambler
+		sHierarchy parent;
 
 	};
-
 	struct SkeletalMesh
 	{
 		Material material;
 		std::array<char, 256> meshName;
 		vector<unsigned int> indexes;
 		vector<SkeletonVertex> skeletalVertexVector;
+		Transform transform;
+		MDagPath Meshpath; //to be used only in assambler
+	};
+	struct sJointChild
+	{
+		int parentSkeletonIndex = 0; //needed change hope still works
+		int parentJointIndex = 0; //needed change hope still works 
+	};
+	struct sMeshChild
+	{
+		int parentMeshIndex = 0; //this was changed
 	};
 
+	struct sPos
+	{
+		float x, y, z;
+	};
+
+	struct sBBox
+	{
+		sPos pos[8];
+		sHierarchy parent;
+		sJointChild jointParent;
+		sMeshChild meshParent;
+	};
 	struct Skeleton
 	{
 		vector<SkeletalMesh> MeshVector;
@@ -130,7 +168,6 @@ public:
 	vector<Mesh>&GetMeshVector();
 	vector<Skeleton>&GetSkeletonVector();
 	vector<Material>&GetMaterialVector();
-	
 
 private:
 	//Variables
@@ -140,10 +177,11 @@ private:
 	vector<Material> materials;
 
 	//Functions
-	void AssembleMesh(MObject MObjectMeshNode);
+	void AssembleMesh(MObject MObjectMeshNode,MObject Parent);
 	void AssembleSkeletonsAndMeshes();
 	void AssembleMaterials();
 	void ConnectMaterialsToMeshes();
+	void GetChildrenBoundingBoxes(vector<Joint> joints);
 
 	void ProcessInverseBindpose(MFnSkinCluster&, Skeleton&, MFnDependencyNode& parentNode); //gets inversebindPose and globalInverseBindpose
 	void ProcessSkeletalVertex (MFnSkinCluster& skinCluster, Skeleton& skeleton); //Gets vertices and weights for each triangleIndex

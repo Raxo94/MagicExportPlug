@@ -30,10 +30,11 @@ vector<Material>& ModelAssembler::GetMaterialVector()
 	return materials;
 }
 
-void ModelAssembler::AssembleMesh(MObject MObjectMeshNode)
+void ModelAssembler::AssembleMesh(MObject MObjectMeshNode,MObject Parent)
 {
 	MFnMesh meshNode(MObjectMeshNode); 
 	Mesh tempMesh;
+
 
 	memcpy(&tempMesh.MeshName, meshNode.name().asChar(), sizeof(const char[256]));//MeshName
 
@@ -45,12 +46,14 @@ void ModelAssembler::AssembleMesh(MObject MObjectMeshNode)
 	MIntArray uvCounts;
 	MIntArray uvIDs;
 	MFloatVectorArray normals;
+	MFloatVectorArray tangents;
 	MIntArray triangleCountsOffsets;
 	MIntArray triangleIndices;
 	MIntArray triangleCounts;
 	MIntArray triangleVertexIDs;
 	MVector vertexNormal;
 	MIntArray normalList, normalCount;
+	MIntArray tangentList, tangentCount;
 
 	meshNode.getPoints(pts, MSpace::kObject);
 	meshNode.getUVs(u, v, 0);
@@ -60,16 +63,16 @@ void ModelAssembler::AssembleMesh(MObject MObjectMeshNode)
 	meshNode.getVertices(vertexCounts, polygonVertexIDs); //get vertex polygon indices
 
 
-	MFloatVectorArray tangents;
-	meshNode.getTangents(tangents);
-
-
 	meshNode.getNormals(normals, MSpace::kObject);
+	meshNode.getTangents(tangents, MSpace::kObject);
 
 	nodeVertices.resize(triangleIndices.length());
 
+
 	meshNode.getNormalIds(normalCount, normalList);
 
+	//jag behöver en lista av faces och jag behöver få ut genom att ge vertex
+	//meshNode.getTangentId
 
 	for (unsigned int i = 0; i < triangleIndices.length(); i++)
 	{ //for each triangle index (36) in a box
@@ -77,6 +80,11 @@ void ModelAssembler::AssembleMesh(MObject MObjectMeshNode)
 		nodeVertices.at(i).pos[0] = pts[polygonVertexIDs[triangleIndices[i]]].x;
 		nodeVertices.at(i).pos[1] = pts[polygonVertexIDs[triangleIndices[i]]].y;
 		nodeVertices.at(i).pos[2] = pts[polygonVertexIDs[triangleIndices[i]]].z;
+		
+		//first is faceId then is vertex id.
+		// i need to know what face i am on...
+		//nodeVertices.at(i).tan[0] = tangents[polygonVertexIDs[triangleIndices[i]]].x;
+
 
 		nodeVertices.at(i).nor[0] = normals[normalList[triangleIndices[i]]].x;
 		nodeVertices.at(i).nor[1] = normals[normalList[triangleIndices[i]]].y;
@@ -85,10 +93,6 @@ void ModelAssembler::AssembleMesh(MObject MObjectMeshNode)
 		nodeVertices.at(i).uv[0] = u[uvIDs[triangleIndices[i]]];
 		nodeVertices.at(i).uv[1] = v[uvIDs[triangleIndices[i]]];
 
-		//Dont know how to get the tangents.,safdo
-		nodeVertices.at(i).tangent[0] = 0;
-		nodeVertices.at(i).tangent[1] = 0;
-		nodeVertices.at(i).tangent[2] = 0;
 
 		//indexing: if the tempMesh contains current vertex we list the earlier one in the indexlist;
 		bool VertexIsUnique = true;
@@ -114,7 +118,15 @@ void ModelAssembler::AssembleMesh(MObject MObjectMeshNode)
 	}//Vertex END
 
 	tempMesh.vertexCount = tempMesh.Vertices.size();
+	MFnTransform transform(Parent); //the parent is the transform
+	tempMesh.transform = GetTransform(transform);
+
+	int count = tempMesh.Meshpath.childCount(&res);
+	MFnDagNode hello(tempMesh.Meshpath);
+	count = hello.parentCount();
 	this->standardMeshes.push_back(tempMesh);
+
+	
 }
 
 void ModelAssembler::AssembleSkeletonsAndMeshes()
@@ -128,7 +140,27 @@ void ModelAssembler::AssembleSkeletonsAndMeshes()
 
 	for (; it.isDone() == false; it.next())
 	{
-		if (it.currentItem().hasFn(MFn::kMesh))
+		MFnDependencyNode testNode(it.currentItem());
+		MString testName = testNode.name();
+		MFnDagNode dagNode(it.currentItem());
+		int childCount = dagNode.childCount();
+		for (size_t i = 0; i < childCount; i++)
+		{
+			MObject child = dagNode.child(i);
+			MFnDependencyNode childNode(child);
+			MString childName = childNode.name();
+		}
+		
+		int parentCount = dagNode.parentCount();
+		for (size_t i = 0; i < parentCount; i++)
+		{
+			MObject parent = dagNode.parent(i);
+			MFnDependencyNode parentNode(parent);
+			MString parentName = parentNode.name();
+		}
+
+		//problemet kan lösa sig om jag kan hitta mina parents istället för mina barn.
+		if (it.currentItem().hasFn(MFn::kMesh)) // is this not kind of the issue?
 		{
 			if (parent.hasFn(MFn::kTransform))
 			{
@@ -140,25 +172,22 @@ void ModelAssembler::AssembleSkeletonsAndMeshes()
 				MFnSkinCluster skinCluster(skinClusterArray[0].node(), &res); //maybe we should make this loop trough all until it finds a skinCluster
 				if (res == true)
 				{
-
-					//Make sure it really is a skinCluster
 					MString name = skinCluster.name(&res);
-
-					//Get the joints
-					
+				
 					ProcessInverseBindpose(skinCluster, skeleton, parentNode);
 					ProcessSkeletalVertex(skinCluster, skeleton);
-					//go trough every mesh and get indices
 					for (size_t i = 0; i < skeleton.MeshVector.size(); i++)
 					{
 						ProcessSkeletalIndexes(skeleton.MeshVector.at(i).skeletalVertexVector, skeleton.MeshVector.at(i).indexes);
+						MFnTransform transform= skeleton.MeshVector.at(i).Meshpath.transform();
+						skeleton.MeshVector.at(i).transform = GetTransform(transform);
 					}
 					
 					ProcessKeyframes(skinCluster, skeleton);
 				}
 				else //check if there is no skinCluster
 				{
-					AssembleMesh(it.currentItem()); //make this assamble mesh instead
+					AssembleMesh(it.currentItem(),parent); //make this assamble mesh instead
 				}
 
 				this->Skeletons.push_back(skeleton);
@@ -182,10 +211,32 @@ void ModelAssembler::ProcessInverseBindpose(MFnSkinCluster& skinCluster, Skeleto
 		joint.name = jointDep.name();
 		MString parentName = parentNode.name();
 
+		MFnDagNode dagNode(jointDep.object());
+		MString testName = dagNode.name();
+		int childCount = dagNode.childCount();
+		
+		for (size_t i = 0; i < childCount; i++)
+		{
+
+			MObject child = dagNode.child(i);
+			MFnDependencyNode childNode(child);
+			MString childName = childNode.name();
+
+			if (childNode.hasAttribute("BOUNDINGBOX"))
+			{
+				childName = childNode.name(); // i have found the bounding box. But what next?
+				////right now i go trough everything and check if there is a skincluster. That is indeed ok.
+				//however maybe i could go breadth first and then manually dive into every node.
+				//and if the node is a joint... Maybe.
+			}
+
+		}
+
+
 		MPlug bindPosePlug = jointDep.findPlug("bindPose", &res);
 		MPlug inverseModelMatrixPlug = parentNode.findPlug("worldInverseMatrix", &res);
 
-		
+	
 
 		MObject data;
 		res = bindPosePlug.getValue(data);
@@ -193,13 +244,16 @@ void ModelAssembler::ProcessInverseBindpose(MFnSkinCluster& skinCluster, Skeleto
 		MMatrix inverseGlobalBindPoseMatrix = bindPoseData.matrix(&res).inverse(); //this is the bindpose. It is called world matrix in plugs
 
 
-		MObject data2;
-		res= inverseModelMatrixPlug.getValue(data2);
-		MFnMatrixData ModelMatrixData(data2,&res); //here the issue arises.
-		MMatrix inverseModelMatrix = ModelMatrixData.matrix(&res); //this returns false?
+
+		//MObject data2;
+		//res= inverseModelMatrixPlug.getValue(data2);
+		//MFnMatrixData ModelMatrixData(data2,&res); //here the issue arises.
+		//MMatrix inverseModelMatrix = ModelMatrixData.matrix(&res); //this returns false?
 		
-		//World space * inverseModelSpace
-		MMatrix inversebindPoseMatrix = inverseGlobalBindPoseMatrix * inverseModelMatrix;
+		
+		//MMatrix inversebindPoseMatrix = inverseGlobalBindPoseMatrix * inverseModelMatrix; //World space * inverseModelSpace
+		
+		MMatrix inverseBindPoseMatrix = inverseGlobalBindPoseMatrix;
 
 		//MMatrix transfered to Joints float[16]
 		for (size_t i = 0; i < 4; i++) 
@@ -207,7 +261,7 @@ void ModelAssembler::ProcessInverseBindpose(MFnSkinCluster& skinCluster, Skeleto
 			for (size_t j = 0; j < 4; j++)
 			{
 				joint.globalBindPoseInverse[(i * 4 + j)] = inverseGlobalBindPoseMatrix[i][j];
-				joint.bindPoseInverse[(i * 4 + j)] = inversebindPoseMatrix[i][j];
+				joint.bindPoseInverse[(i * 4 + j)] = inverseBindPoseMatrix[i][j];
 			}
 		}
 
@@ -296,6 +350,7 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 
 		MDagPath skinPath;  res = skinCluster.getPathAtIndex(index, skinPath); //get weights for each vertex {8 in a cube}
 		MFnMesh meshNode(skinPath.node()); //the meshNode
+		skeletalMesh.Meshpath = skinPath;
 
 		//getMEshName
 		MFnDependencyNode meshnode(skinPath.node());
@@ -370,6 +425,7 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 			nodeVertices.at(i).uv[1] = v[uvIDs[triangleIndices[i]]];
 
 			nodeVertices.at(i).deformer = VertexDeformVector[ polygonVertexIDs[ triangleIndices[i]]];
+
 			//Vi kollar till vilken vertex trianglen pekar på och hämtar den vikten
 		}
 		skeletalMesh.skeletalVertexVector = nodeVertices;
@@ -496,14 +552,14 @@ void ModelAssembler::AssembleMaterials()
 
 		MFnDependencyNode materialNode(mNode);
 		MString materialName = materialNode.name();
-		memcpy(&tempMaterial.name, materialName.asChar(), materialName.length() * sizeof(char) + 1);
+		memcpy(&tempMaterial.name, materialName.asChar(), materialName.length() * sizeof(char)+1);
 
 		//Get MaterialNode Plugs
 		MPlug outColor = materialNode.findPlug("outColor"); //to go further in the plugs
 		MPlug color = materialNode.findPlug("color"); //to get the color values
 		MPlug diffuse = materialNode.findPlug("diffuse"); //to get the diffuse of the material
 		MPlug specularColor = materialNode.findPlug("specularColor"); //to get the specular color of the material
-		
+		MPlug ShinyFactor = materialNode.findPlug("specularRollOff"); //to get the specular color of the material
 		//GetNormalMap plug
 		MPlug normalCamera = materialNode.findPlug("normalCamera");
 		normalCamera.connectedTo(bmpGroup, true, false, &res);
@@ -538,6 +594,14 @@ void ModelAssembler::AssembleMaterials()
 		MFnNumericData specularData(data);
 		specularData.getData(tempMaterial.specularColor[0], tempMaterial.specularColor[1], tempMaterial.specularColor[2]);
 		
+		//specularRollOff
+		ShinyFactor.getValue(tempMaterial.shinyFactor);
+
+		//diffuse Texture
+		diffuse.connectedTo(textureGroup, true, false, &res);
+		tempMaterial.diffuseFilepath = GetTexture(textureGroup);
+		if (textureGroup.length() == 0)
+			memcpy(&tempMaterial.diffuseFilepath, "NOTEXTURE", sizeof(const char[10]));
 		//specular texture
 		specularColor.connectedTo(textureGroup, true, false, &res); 
 		tempMaterial.specularFilepath = GetTexture(textureGroup); 
@@ -618,12 +682,19 @@ void ModelAssembler::ConnectMaterialsToMeshes()
 				}
 			}//end of standard meshes
 
-
-
 		}
 	
 	}
 	
+
+}
+
+void ModelAssembler::GetChildrenBoundingBoxes(vector<Joint> joints)
+{
+	for (size_t i = 0; i < joints.size(); i++)
+	{
+		;//joints.at(i).Meshpath
+	}
 
 }
 

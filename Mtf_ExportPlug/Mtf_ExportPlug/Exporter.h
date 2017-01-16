@@ -24,8 +24,8 @@ private:
 	//
 	//vector<sMesh> meshVector;
 	//vector<sMaterial> MaterialVector;
-	void prepareMeshData(assembleStructs::Mesh);
-	void prepareMaterialData();
+	//void prepareMeshData(assembleStructs::Mesh);
+	//void prepareMaterialData();
 	
 
 
