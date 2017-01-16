@@ -40,6 +40,11 @@ vector<sBBox>& ModelAssembler::GetBoundingBoxVector()
 	return BBoxes;
 }
 
+eModelType & ModelAssembler::GetType()
+{
+	return TYPE;
+}
+
 void ModelAssembler::AssembleMesh(MObject MObjectMeshNode,MObject Parent)
 {
 	
@@ -245,6 +250,7 @@ void ModelAssembler::AssembleSkeletonsAndMeshes()
 				MFnSkinCluster skinCluster(skinClusterArray[0].node(), &res); //maybe we should make this loop trough all until it finds a skinCluster
 				if (res == true)
 				{
+					this->TYPE = eModelType::ANIMATED;
 					MString name = skinCluster.name(&res);
 
 				
@@ -259,13 +265,14 @@ void ModelAssembler::AssembleSkeletonsAndMeshes()
 					}
 					
 					ProcessKeyframes(skinCluster, skeleton);
+					this->Skeletons.push_back(skeleton);
 				}
 				else //check if there is no skinCluster
 				{
 					AssembleMesh(it.currentItem(),parent); //make this assamble mesh instead
 				}
 
-				this->Skeletons.push_back(skeleton);
+				
 
 			} //End of Mesh
 		}
@@ -712,47 +719,27 @@ void ModelAssembler::AssembleMaterials()
 
 void ModelAssembler::ConnectMaterialsToMeshes()
 {
-	Skeletons;
 
 	for (Material material : materials)
 	{
 		for (std::array<char, 256> boundMeshName : material.boundMeshes)
 		{
-
-			for (size_t i = 0; i < Skeletons.size(); i++)
-			{
-				for (size_t j = 0; j < Skeletons.at(i).MeshVector.size(); j++)
-				{
-					if (boundMeshName == Skeletons.at(i).MeshVector.at(j).name)
-						Skeletons.at(i).MeshVector.at(j).material = material;
-				} //end of skeletal meshes
-
-			}// end of skeletons
-
-
-			for (size_t j = 0; j <standardMeshes.size(); j++)
+			for (size_t j = 0; j < standardMeshes.size(); j++)
 			{
 				if (boundMeshName == standardMeshes.at(j).name)
 				{
 					standardMeshes.at(j).material = material;
 				}
 			}//end of standard meshes
-
 		}
-	
 	}
-	
-
 }
 
-void ModelAssembler::GetChildrenBoundingBoxes(vector<Joint> joints)
+void ModelAssembler::AssembleBoundingBoxes()
 {
-	for (size_t i = 0; i < joints.size(); i++)
-	{
-		;//joints.at(i).Meshpath
-	}
-
+	;
 }
+
 
 
 
@@ -814,6 +801,12 @@ Transform ModelAssembler::GetTransform(MFnTransform & transform)
 
 	double dScale[3]; float fScale[3];
 	transform.getScale(dScale);
+	MEulerRotation eulerRotation;
+	transform.getRotation(eulerRotation);
+
+	result.rot[0] = eulerRotation.x;
+	result.rot[1] = eulerRotation.y;
+	result.rot[2] = eulerRotation.z;
 
 	result.scale[0] = dScale[0];
 	result.scale[1] = dScale[1];

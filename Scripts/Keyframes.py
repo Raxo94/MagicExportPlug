@@ -18,6 +18,9 @@ def ChangeLayer(LayerName,boolOn):
    mel.eval(command)
 
 
+def returnThis(this):
+    return this
+
 def GetJointKeyframes(jointName,keyframeList):
     
     pm.select(jointName)  
@@ -62,5 +65,4 @@ def GetJointKeyframes(jointName,keyframeList):
     else:
         print("No Keyframes in this animation layer")     
             
-keyframes = []        
-GetJointKeyframes("joint12" ,keyframes)
+keyframes = []  

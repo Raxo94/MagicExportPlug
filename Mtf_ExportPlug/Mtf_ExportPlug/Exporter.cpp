@@ -45,12 +45,16 @@ void Exporter::writeModelsToFile(string outFilePath)
 	outFile.write((const char*)&dataSize, sizeof(int));
 	outFile.write((const char*)&bufferSize, sizeof(int));
 
+	#pragma endregion END OF DATAHEADER
+
 	//Modelheader
+
 	hModel expModel = hModel{};
 	expModel.numMeshes = assamble->GetMeshVector().size();
 	expModel.numBBoxes = assamble->GetBoundingBoxVector().size();
 	expModel.numSkeletons = assamble->GetSkeletonVector().size();
-	expModel.TYPE = eModelType::STATIC;
+	expModel.TYPE = assamble->GetType();
+
 
 	for (Skeleton skeleton : assamble->GetSkeletonVector())
 	{
@@ -77,7 +81,6 @@ void Exporter::writeModelsToFile(string outFilePath)
 		expModel.numIndices += skeletalMesh.indexList.size();
 	}
 	
-		
 
 	//Materials are in the importer stored in meshes, for the engine they are stored in models.
 	const char* NewMaterialName = &meshes.at(0).material.name[0];
@@ -86,7 +89,9 @@ void Exporter::writeModelsToFile(string outFilePath)
 
 	outFile.write((const char*)&expModel, sizeof(hModel));
 
-	#pragma endregion END OF DATAHEADER
+	#pragma endregion END OF MODELHEADER
+
+
 
 	//Offsets
 	sOffset currOffset = {};
@@ -121,17 +126,21 @@ void Exporter::writeModelsToFile(string outFilePath)
 	}
 
 	//Boundingboxes
-	//There are no boundingboxes
+	//Joints
+	//Animation states
+	//Keyframes
 
-	////Vertices
-	//outFile.write((const char*)meshes.at(0).Vertices.data(), sizeof(assembleStructs::Vertex) * meshes.at(0).Vertices.size());
-	//bufferSize += sizeof(assembleStructs::Vertex) * meshes.at(i).Vertices.size();
-	//
-	////Indices
-	//outFile.write((const char*)meshes.at(i).indexes.data(), sizeof(int) * meshes.at(i).indexes.size());
-	//bufferSize += sizeof(int) * meshes.at(i).indexes.size();
+
+	//Vertices
+	outFile.write((const char*)meshes.at(0).vertList.data(), sizeof(assembleStructs::Vertex) * meshes.at(0).vertList.size());
+	bufferSize += sizeof(assembleStructs::Vertex) * meshes.at(0).vertList.size();
+	
+	//Indices
+	outFile.write((const char*)meshes.at(0).indexList.data(), sizeof(int) * meshes.at(0).indexList.size());
+	bufferSize += sizeof(int) * meshes.at(0).indexList.size();
 
 	//update dataHeader
+
 	outFile.seekp(std::ios::beg);
 	outFile.write((const char*)&dataSize, sizeof(int));
 	outFile.write((const char*)&bufferSize, sizeof(int));

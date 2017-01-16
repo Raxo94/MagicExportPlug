@@ -88,8 +88,8 @@ namespace assembleStructs
 
 	struct Mesh
 	{
-		int skeletonIndex;
-		int materialID;
+		int skeletonIndex = NOTSET;
+		int materialID = NOTSET;
 		Material material;
 		sHierarchy parent;
 		sJointChild parentJoint;
@@ -142,7 +142,7 @@ public:
 	vector<Skeleton>&GetSkeletonVector();
 	vector<Material>&GetMaterialVector();
 	vector<sBBox>&GetBoundingBoxVector();
-	
+	eModelType& GetType();
 
 private:
 	//Variables
@@ -153,12 +153,14 @@ private:
 	vector<Material> materials;
 	vector<sBBox> BBoxes;
 
+
+	eModelType TYPE = eModelType::STATIC;
 	//Functions
 	void AssembleMesh(MObject MObjectMeshNode,MObject Parent);
 	void AssembleSkeletonsAndMeshes();
 	void AssembleMaterials();
 	void ConnectMaterialsToMeshes();
-	void GetChildrenBoundingBoxes(vector<Joint> joints);
+	void AssembleBoundingBoxes();
 
 	void ProcessInverseBindpose(MFnSkinCluster&, Skeleton&, MFnDependencyNode& parentNode); //gets inversebindPose and globalInverseBindpose
 	void ProcessSkeletalVertex (MFnSkinCluster& skinCluster, Skeleton& skeleton); //Gets vertices and weights for each triangleIndex
