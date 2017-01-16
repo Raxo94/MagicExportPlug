@@ -21,9 +21,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Exporter.h">
-      <Filter>Exporter</Filter>
-    </ClInclude>
     <ClInclude Include="ModelAssembler.h">
       <Filter>Assembler</Filter>
     </ClInclude>
@@ -37,9 +34,6 @@
     </ClCompile>
     <ClCompile Include="ModelAssembler.cpp">
       <Filter>Assembler</Filter>
-    </ClCompile>
-    <ClCompile Include="Exporter.cpp">
-      <Filter>Exporter</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
