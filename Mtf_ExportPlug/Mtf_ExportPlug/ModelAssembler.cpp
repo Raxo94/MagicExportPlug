@@ -32,7 +32,75 @@ vector<Material>& ModelAssembler::GetMaterialVector()
 
 void ModelAssembler::AssembleMesh(MObject MObjectMeshNode,MObject Parent)
 {
-	MFnMesh meshNode(MObjectMeshNode); 
+	
+
+	//MFnDagNode dagNode(MObjectMeshNode);
+	//MString testName = dagNode.name();
+	MFnMesh meshNode(MObjectMeshNode);
+	MFnDagNode dagNode(Parent);
+	
+	if (dagNode.hasAttribute("BOUNDINGBOX"))
+	{
+		MFloatPointArray bPts; //we make a boundingbox instead of mesh
+		meshNode.getPoints(bPts, MSpace::kObject);
+		sBBox boundingBox;
+
+		//Get the 8 points.
+		for (size_t i = 0; i < 8; i++)
+		{
+			MFloatPoint point = bPts[i];
+			boundingBox.pos[i].x = point.x;
+			boundingBox.pos[i].y = point.y;
+			boundingBox.pos[i].z = point.z;
+		}
+
+		unsigned int parentCount = dagNode.parentCount();
+
+		for (size_t i = 0; i < parentCount; i++)
+		{
+			MFnDagNode parent = dagNode.parent(i);
+			MString parentName = parent.name();
+
+			MString type = parent.typeName();
+			
+			if (type == "joint")
+			{
+				boundingBox.parent.hasParentJoint = true;
+				//boundingBox.jointParent.;
+			}
+			else if (type == "mesh")
+			{
+				boundingBox.parent.hasParentMesh = true;
+			}
+
+
+			
+			
+
+			else if (parent.type() == MFn::Type::kMesh)
+			{
+				boundingBox.parent.hasParentMesh = true;
+			}
+			else if (parent.type() == MFn::Type::kTransform)
+			{
+				boundingBox.parent.hasParentMesh = true;
+			}
+			BBoxes.push_back(boundingBox);
+
+		}
+		
+
+
+		
+
+
+	}
+	
+
+
+
+
+	
 	Mesh tempMesh;
 
 
@@ -70,10 +138,14 @@ void ModelAssembler::AssembleMesh(MObject MObjectMeshNode,MObject Parent)
 
 
 	meshNode.getNormalIds(normalCount, normalList);
-
+	
+	
 	//jag behöver en lista av faces och jag behöver få ut genom att ge vertex
 	//meshNode.getTangentId
 
+	int count = polygonVertexIDs.length();
+	count = pts.length();
+	//basicaly we are supposed to use pnts
 	for (unsigned int i = 0; i < triangleIndices.length(); i++)
 	{ //for each triangle index (36) in a box
 
@@ -121,9 +193,7 @@ void ModelAssembler::AssembleMesh(MObject MObjectMeshNode,MObject Parent)
 	MFnTransform transform(Parent); //the parent is the transform
 	tempMesh.transform = GetTransform(transform);
 
-	int count = tempMesh.Meshpath.childCount(&res);
-	MFnDagNode hello(tempMesh.Meshpath);
-	count = hello.parentCount();
+
 	this->standardMeshes.push_back(tempMesh);
 
 	
@@ -164,6 +234,7 @@ void ModelAssembler::AssembleSkeletonsAndMeshes()
 		{
 			if (parent.hasFn(MFn::kTransform))
 			{
+
 				MFnDependencyNode parentNode(parent);
 				MFnDependencyNode depNode(it.currentItem());
 				MPlug inMesh = depNode.findPlug("inMesh", &res);
@@ -173,11 +244,13 @@ void ModelAssembler::AssembleSkeletonsAndMeshes()
 				if (res == true)
 				{
 					MString name = skinCluster.name(&res);
+
 				
 					ProcessInverseBindpose(skinCluster, skeleton, parentNode);
 					ProcessSkeletalVertex(skinCluster, skeleton);
 					for (size_t i = 0; i < skeleton.MeshVector.size(); i++)
 					{
+						skeleton.MeshVector.at(i).skeletonIndex = Skeletons.size();
 						ProcessSkeletalIndexes(skeleton.MeshVector.at(i).skeletalVertexVector, skeleton.MeshVector.at(i).indexes);
 						MFnTransform transform= skeleton.MeshVector.at(i).Meshpath.transform();
 						skeleton.MeshVector.at(i).transform = GetTransform(transform);

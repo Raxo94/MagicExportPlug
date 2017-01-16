@@ -117,9 +117,9 @@ void Exporter::writeModelsToFile(string outFilePath)
 	//One duplicate loop for skeletal meshes
 	for (int i = 0; i < skelMeshes.size(); i++)
 	{
-		//std::ofstream outFile(outFilePath, std::ofstream::binary); //output file stream
-		//int dataSize = 0;
-		//int bufferSize = 0;
+		std::ofstream outFile(outFilePath, std::ofstream::binary); //output file stream
+		int dataSize = 0;
+		int bufferSize = 0;
 		////Skeletons
 		//hSkeleton expSkeleton;
 		//for (int j = 0; j < skel.size(); j++)

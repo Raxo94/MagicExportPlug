@@ -41,6 +41,7 @@
 #include <maya/MFnAnimCurve.h>
 #include <maya/Mquaternion.h>
 #include <maya/MItMeshVertex.h>
+#include <maya/MFnIkJoint.h>
 
 #include <vector>
 

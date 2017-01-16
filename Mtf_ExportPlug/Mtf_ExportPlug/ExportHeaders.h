@@ -25,7 +25,7 @@ enum eLightType
 	VOLUMELIGHT
 };
 
-#define NOTSET -1337
+
 
 struct sOffset
 {

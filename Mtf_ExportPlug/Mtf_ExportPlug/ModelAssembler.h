@@ -10,7 +10,7 @@
 
 using namespace std;
 
-
+#define NOTSET -1337
 namespace assembleStructs
 {
 	struct vertexDeform
@@ -123,11 +123,12 @@ namespace assembleStructs
 		vector<SkeletonVertex> skeletalVertexVector;
 		Transform transform;
 		MDagPath Meshpath; //to be used only in assambler
+		unsigned int skeletonIndex;
 	};
 	struct sJointChild
 	{
-		int parentSkeletonIndex = 0; //needed change hope still works
-		int parentJointIndex = 0; //needed change hope still works 
+		int parentSkeletonIndex = NOTSET; //needed change hope still works
+		int parentJointIndex = NOTSET; //needed change hope still works 
 	};
 	struct sMeshChild
 	{
@@ -173,8 +174,10 @@ private:
 	//Variables
 	MStatus res;
 	vector<Mesh> standardMeshes;
+	vector<SkeletalMesh> skeletalMesh; //not yet used 
 	vector<Skeleton> Skeletons;
 	vector<Material> materials;
+	vector<sBBox> BBoxes;
 
 	//Functions
 	void AssembleMesh(MObject MObjectMeshNode,MObject Parent);
