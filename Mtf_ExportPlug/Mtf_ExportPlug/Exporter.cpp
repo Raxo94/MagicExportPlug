@@ -31,8 +31,9 @@ void Exporter::writeModelsToFile(string outFilePath)
 
 	std::vector<assembleStructs::Material> mat = assamble->GetMaterialVector();
 	std::vector<assembleStructs::Mesh> meshes = assamble->GetMeshVector();
+	std::vector<sBBox> BoundingBoxes = assamble->GetBoundingBoxVector();
 	std::vector<assembleStructs::Skeleton> skel = assamble->GetSkeletonVector();
-	//std::vector<assembleStructs::SkeletalMesh> skelMeshes = skel.at(0).MeshVector;
+	//std::vector<assembleStructs::animMesh> skelMeshes = skel.at(0).MeshVector;
 
 	//std::string outPath = outFilePath + std::string(&meshes.at(0).name + ".model");
 	std::ofstream outFile(outFilePath + std::string(&meshes.at(0).name[0]) + ".model", std::ofstream::binary); //output file stream
@@ -75,10 +76,10 @@ void Exporter::writeModelsToFile(string outFilePath)
 		expModel.numIndices += standardMesh.indexList.size();
 	}
 
-	for (assembleStructs::Mesh skeletalMesh : assamble->GetMeshVector())
+	for (assembleStructs::Mesh animMesh : assamble->GetMeshVector())
 	{
-		expModel.numSkeletonVertices += skeletalMesh.skelVertList.size();
-		expModel.numIndices += skeletalMesh.indexList.size();
+		expModel.numSkeletonVertices += animMesh.skelVertList.size();
+		expModel.numIndices += animMesh.indexList.size();
 	}
 	
 

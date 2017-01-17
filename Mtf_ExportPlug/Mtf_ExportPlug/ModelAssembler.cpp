@@ -5,10 +5,10 @@ ModelAssembler::ModelAssembler()
 	
 	AssembleSkeletonsAndMeshes();
 	AssembleMaterials();
+	AssembleBoundingBoxes();
 	ConnectMaterialsToMeshes();
 
-	Skeletons;
-	standardMeshes;
+	
 }
 
 ModelAssembler::~ModelAssembler()
@@ -17,13 +17,9 @@ ModelAssembler::~ModelAssembler()
 
 vector<Mesh>& ModelAssembler::GetMeshVector()
 {
-	return standardMeshes;
+	return Meshes;
 }
 
-vector<SkeletalMesh>& ModelAssembler::GetSkeletalMeshVector()
-{
-	return skeletalMeshes;
-}
 
 vector<Skeleton>& ModelAssembler::GetSkeletonVector()
 {
@@ -40,6 +36,11 @@ vector<sBBox>& ModelAssembler::GetBoundingBoxVector()
 	return BBoxes;
 }
 
+vector<Joint>& ModelAssembler::GetallModelJoints()
+{
+	return allModelJoints;
+}
+
 eModelType & ModelAssembler::GetType()
 {
 	return TYPE;
@@ -47,73 +48,21 @@ eModelType & ModelAssembler::GetType()
 
 void ModelAssembler::AssembleMesh(MObject MObjectMeshNode,MObject Parent)
 {
-	
-
-	//MFnDagNode dagNode(MObjectMeshNode);
-	//MString testName = dagNode.name();
 	MFnMesh meshNode(MObjectMeshNode);
-	MFnDagNode dagNode(Parent);
 	
-	if (dagNode.hasAttribute("BOUNDINGBOX"))
+	if (!meshNode.hasAttribute("BOUNDINGBOX")) //if mesh is not a boundingbox
 	{
-		MFloatPointArray bPts; //we make a boundingbox instead of mesh
-		meshNode.getPoints(bPts, MSpace::kObject);
-		sBBox boundingBox;
-
-		//Get the 8 points.
-		for (size_t i = 0; i < 8; i++)
-		{
-			MFloatPoint point = bPts[i];
-			boundingBox.pos[i].x = point.x;
-			boundingBox.pos[i].y = point.y;
-			boundingBox.pos[i].z = point.z;
-		}
-
-		unsigned int parentCount = dagNode.parentCount();
-
-		for (size_t i = 0; i < parentCount; i++)
-		{
-			MFnDagNode parent = dagNode.parent(i);
-			MString parentName = parent.name();
-
-			MString type = parent.typeName();
-			
-			if (type == "joint")
-			{
-				boundingBox.parent.hasParentJoint = true;
-				//boundingBox.jointParent.;
-			}
-			if (type == "mesh")
-			{
-				boundingBox.parent.hasParentMesh = true;
-			}
-
-
-			
-			
-
-			else if (parent.type() == MFn::Type::kMesh)
-			{
-				boundingBox.parent.hasParentMesh = true;
-			}
-			else if (parent.type() == MFn::Type::kTransform)
-			{
-				boundingBox.parent.hasParentMesh = true;
-			}
-			BBoxes.push_back(boundingBox);
-
-		}
-		
-	}
-	else
-	{
-
-
+		//names
 		Mesh tempMesh;
-
-
 		memcpy(&tempMesh.name, meshNode.name().asChar(), sizeof(const char[256]));//MeshName
+		tempMesh.nameMString = meshNode.name();
 
+		//transform
+		MFnTransform transform(Parent); //the parent is the transform
+		tempMesh.transform_Name_Mstring = transform.name();
+		tempMesh.transform = GetTransform(transform);
+
+		//Mesh
 		vector<Vertex>nodeVertices;
 		MFloatPointArray pts;
 		MIntArray vertexCounts;
@@ -141,19 +90,9 @@ void ModelAssembler::AssembleMesh(MObject MObjectMeshNode,MObject Parent)
 
 		meshNode.getNormals(normals, MSpace::kObject);
 		meshNode.getTangents(tangents, MSpace::kObject);
-
 		nodeVertices.resize(triangleIndices.length());
-
-
 		meshNode.getNormalIds(normalCount, normalList);
-
-
-		//jag behöver en lista av faces och jag behöver få ut genom att ge vertex
-		//meshNode.getTangentId
-
-		int count = polygonVertexIDs.length();
-		count = pts.length();
-		//basicaly we are supposed to use pnts
+		
 		for (unsigned int i = 0; i < triangleIndices.length(); i++)
 		{ //for each triangle index (36) in a box
 
@@ -193,15 +132,9 @@ void ModelAssembler::AssembleMesh(MObject MObjectMeshNode,MObject Parent)
 				tempMesh.vertList.push_back(nodeVertices.at(i));
 			}
 			//end of indexing
-
-
 		}//Vertex END
 
-		MFnTransform transform(Parent); //the parent is the transform
-		tempMesh.transform = GetTransform(transform);
-
-
-		this->standardMeshes.push_back(tempMesh);
+		this->Meshes.push_back(tempMesh);
 
 	}
 }
@@ -265,15 +198,17 @@ void ModelAssembler::AssembleSkeletonsAndMeshes()
 					}
 					
 					ProcessKeyframes(skinCluster, skeleton);
+					for(Joint& joint : skeleton.jointVector)
+					{
+						joint.skeletonID = Skeletons.size() - 1;
+						allModelJoints.push_back(joint);
+					}
 					this->Skeletons.push_back(skeleton);
 				}
 				else //check if there is no skinCluster
 				{
 					AssembleMesh(it.currentItem(),parent); //make this assamble mesh instead
 				}
-
-				
-
 			} //End of Mesh
 		}
 		parent = it.currentItem();
@@ -295,25 +230,9 @@ void ModelAssembler::ProcessInverseBindpose(MFnSkinCluster& skinCluster, Skeleto
 
 		MFnDagNode dagNode(jointDep.object());
 		MString testName = dagNode.name();
-		int childCount = dagNode.childCount();
+
 		
-		for (size_t i = 0; i < childCount; i++)
-		{
-
-			MObject child = dagNode.child(i);
-			MFnDependencyNode childNode(child);
-			MString childName = childNode.name();
-
-			if (childNode.hasAttribute("BOUNDINGBOX"))
-			{
-				childName = childNode.name(); // i have found the bounding box. But what next?
-				////right now i go trough everything and check if there is a skincluster. That is indeed ok.
-				//however maybe i could go breadth first and then manually dive into every node.
-				//and if the node is a joint... Maybe.
-			}
-
-		}
-
+		
 
 		MPlug bindPosePlug = jointDep.findPlug("bindPose", &res);
 		MPlug inverseModelMatrixPlug = parentNode.findPlug("worldInverseMatrix", &res);
@@ -362,8 +281,7 @@ void ModelAssembler::GetJointParentID(MFnDependencyNode & jointDep, Joint & curr
 	currentJoint.ID = OtherJoints.size();
 	currentJoint.parentID = 0;
 	
-	
-	
+
 	inverseScale.connectedTo(jointArray, true, false, &res);
 
 	if (jointArray.length() > 0) //this gets the parent
@@ -424,21 +342,20 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 
 	for (size_t i = 0; i < geometryCount; ++i) //if several meshes are connected go trough them all.
 	{
-		Mesh skeletalMesh;
-		skeletalMesh.isAnimated = true;
+		Mesh animMesh;
+		animMesh.isAnimated = true;
 
 		unsigned int index = skinCluster.indexForOutputConnection(i, &res); 
 
 		MDagPath skinPath;  res = skinCluster.getPathAtIndex(index, skinPath); //get weights for each vertex {8 in a cube}
 		MFnMesh meshNode(skinPath.node()); //the meshNode
-		skeletalMesh.Meshpath = skinPath;
+		animMesh.Meshpath = skinPath;
 
-		//getMEshName
+		//MESHNAME
 		MFnDependencyNode meshnode(skinPath.node());
-		MString name = meshnode.name(); //for debuging purposes
-		std::array<char, 256> meshName;
-		memcpy(&meshName, name.asChar(), name.length() * sizeof(char)); 
-		skeletalMesh.name = meshName;
+		MString meshName = animMesh.nameMString = meshnode.name(); //for debuging purposes
+		 
+		memcpy(&animMesh.name, meshName.asChar(), meshName.length() * sizeof(char));
 
 		//weights
 		vector<vertexDeform>VertexDeformVector = GetSkinWeightsList(skinPath, skinCluster, skeleton.jointVector);
@@ -491,9 +408,9 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 
 			//Vi kollar till vilken vertex trianglen pekar på och hämtar den vikten
 		}
-		skeletalMesh.skelVertList = nodeVertices;
-		skeleton.MeshVector.push_back(skeletalMesh);
-		//skeleton.skeletalVertexVector = nodeVertices; //so far im only planing on having one list per skeleton.
+		animMesh.skelVertList = nodeVertices;
+		skeleton.MeshVector.push_back(animMesh);
+
 	} //End of Current Mesh Looping to next
 }
 
@@ -724,11 +641,11 @@ void ModelAssembler::ConnectMaterialsToMeshes()
 	{
 		for (std::array<char, 256> boundMeshName : material.boundMeshes)
 		{
-			for (size_t j = 0; j < standardMeshes.size(); j++)
+			for (size_t j = 0; j < Meshes.size(); j++)
 			{
-				if (boundMeshName == standardMeshes.at(j).name)
+				if (boundMeshName == Meshes.at(j).name)
 				{
-					standardMeshes.at(j).material = material;
+					Meshes.at(j).material = material;
 				}
 			}//end of standard meshes
 		}
@@ -737,7 +654,75 @@ void ModelAssembler::ConnectMaterialsToMeshes()
 
 void ModelAssembler::AssembleBoundingBoxes()
 {
-	;
+	MObject parent;
+	MItDag it(MItDag::kDepthFirst);
+	for (; it.isDone() == false; it.next())
+	{
+		if (parent.hasFn(MFn::kTransform))
+		{
+			MFnTransform transform(parent);
+			if (it.currentItem().hasFn(MFn::kMesh))
+			{
+				MFnMesh meshNode(it.currentItem());
+				//if the mesh or the transform of the mesh has the attribute BoundingBox
+				if (meshNode.hasAttribute("BOUNDINGBOX")||transform.hasAttribute("BOUNDINGBOX"))
+				{
+					sBBox boundingBox;
+					MFloatPointArray bPts;
+					meshNode.getPoints(bPts, MSpace::kObject);
+
+					//Get the 8 corners of the BB
+					for (size_t i = 0; i < 8; i++)
+					{
+						MFloatPoint point = bPts[i];
+						boundingBox.pos[i].x = point.x;
+						boundingBox.pos[i].y = point.y;
+						boundingBox.pos[i].z = point.z;
+					}
+
+
+					unsigned int parentCount = meshNode.parentCount();
+					for (size_t i = 0; i < parentCount; i++)
+					{
+						MFnDagNode parentNode = transform.parent(i);
+						MString parentName = parentNode.name();
+						MString parentNodetype = parentNode.typeName();
+
+						if (parentNodetype == "joint")
+						{
+							boundingBox.parent.hasParentJoint = true;
+							for (Joint joint : allModelJoints)
+							{
+								if (parentName == joint.name)
+								{
+									boundingBox.jointParent.parentSkeletonIndex = joint.skeletonID;
+									boundingBox.jointParent.parentJointIndex = joint.ID;
+								}
+							}
+						}
+						if (parentNodetype == "transform")
+						{
+							boundingBox.parent.hasParentMesh = true;
+							for (size_t index = 0; index < Meshes.size(); index++)
+							{
+								//the reason for this is that parenting is always done to transforms not meshes.
+								if (parentName == Meshes.at(index).transform_Name_Mstring)
+								{
+									boundingBox.meshParent.parentMeshIndex = index;
+
+								}
+								
+							}
+						}
+
+						BBoxes.push_back(boundingBox);
+
+					}
+				}
+			}
+		}
+		parent = it.currentItem();
+	}
 }
 
 

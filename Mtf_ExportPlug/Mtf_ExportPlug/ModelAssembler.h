@@ -45,11 +45,14 @@ namespace assembleStructs
 	struct Joint
 	{
 		int ID, parentID;
+		int skeletonID;
 		std::array<float, 16> bindPoseInverse, globalBindPoseInverse;
-		MString name;
+		
 		int animationStateCount;
 		std::vector<sImAnimationState> animationState;
 		MDagPath dagPath;
+		MString name;
+
 		
 		//to be used only in assambler
 		//joints har koll på olika keyframes för olika lager
@@ -95,6 +98,8 @@ namespace assembleStructs
 		sJointChild parentJoint;
 		sMeshChild parentMesh;
 		std::array<char, 256> name;
+		MString nameMString;
+		MString transform_Name_Mstring;
 
 		//This mesh's local transform
 		Transform transform;
@@ -102,20 +107,9 @@ namespace assembleStructs
 		std::vector<Vertex> vertList;
 		std::vector<SkeletonVertex> skelVertList;
 		std::vector<int> indexList;
-		int uniqueId;
 		bool isAnimated = false;
 		MDagPath Meshpath; //to be used only in assambler
 
-	};
-	struct SkeletalMesh
-	{
-		Material material;
-		std::array<char, 256> meshName;
-		vector<int> indexes;
-		
-		Transform transform;
-		MDagPath Meshpath; //to be used only in assambler
-		unsigned int skeletonIndex;
 	};
 
 	struct Skeleton
@@ -138,18 +132,18 @@ public:
 	~ModelAssembler();
 
 	vector<Mesh>&GetMeshVector();
-	vector<SkeletalMesh>&GetSkeletalMeshVector();
 	vector<Skeleton>&GetSkeletonVector();
 	vector<Material>&GetMaterialVector();
 	vector<sBBox>&GetBoundingBoxVector();
+	vector<Joint>& GetallModelJoints();
 	eModelType& GetType();
 
 private:
 	//Variables
 	MStatus res;
-	vector<Mesh> standardMeshes;
-	vector<SkeletalMesh> skeletalMeshes; //not yet used 
+	vector<Mesh> Meshes; 
 	vector<Skeleton> Skeletons;
+	vector<Joint> allModelJoints;
 	vector<Material> materials;
 	vector<sBBox> BBoxes;
 
