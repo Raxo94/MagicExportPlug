@@ -26,14 +26,12 @@ void Exporter::writeModelsToFile(string outFilePath)
 	int keyCounter = 0;
 	int animationLayerCounter = 0;
 
-	//There are no "Models" right now... So a temporary solution where each mesh is thought of as a model ensues
-	//There are also no boundingboxes... So boundingoxes is set to 0 for the moment
+	//There are no "Models" right now
 
 	std::vector<assembleStructs::Material> mat = assamble->GetMaterialVector();
 	std::vector<assembleStructs::Mesh> meshes = assamble->GetMeshVector();
 	std::vector<sBBox> BoundingBoxes = assamble->GetBoundingBoxVector();
 	std::vector<assembleStructs::Skeleton> skel = assamble->GetSkeletonVector();
-	//std::vector<assembleStructs::animMesh> skelMeshes = skel.at(0).MeshVector;
 
 	//std::string outPath = outFilePath + std::string(&meshes.at(0).name + ".model");
 	std::ofstream outFile(outFilePath + std::string(&meshes.at(0).name[0]) + ".model", std::ofstream::binary); //output file stream
@@ -56,13 +54,12 @@ void Exporter::writeModelsToFile(string outFilePath)
 	expModel.numSkeletons = assamble->GetSkeletonVector().size();
 	
 
-
 	for (Skeleton skeleton : assamble->GetSkeletonVector())
 	{
-		expModel.TYPE = ANIMATED;
 		expModel.numJoints += skeleton.jointVector.size();
 		for (Joint joint : skeleton.jointVector)
 		{
+			expModel.numAnimationStates += joint.animationState.size();
 			for (sImAnimationState state: joint.animationState)
 			{
 				expModel.numKeyframes += state.keyList.size();
@@ -77,8 +74,8 @@ void Exporter::writeModelsToFile(string outFilePath)
 	}
 	expModel.TYPE = assamble->GetType();
 
-	//Materials are in the importer stored in meshes, for the engine they are stored in models.
 
+	//Materials are in the importer stored in meshes, for the engine they are stored in models.
 	const char* NewMaterialName = &meshes.at(0).material.name[0];
 	memcpy(expModel.materialName, &meshes.at(0).material.name[0], 22);
 	memcpy(&expModel.materialName[strlen(NewMaterialName)], ".material", 10);
@@ -122,6 +119,9 @@ void Exporter::writeModelsToFile(string outFilePath)
 	}
 
 	//Boundingboxes
+	outFile.write((const char*)BoundingBoxes.data(), BoundingBoxes.size() * sizeof(sBBox));
+	dataSize += BoundingBoxes.size() * sizeof(sBBox);
+
 	//Joints
 	hSkeleton expSkeleton;
 	for (Skeleton skeleton : skel)
@@ -142,7 +142,6 @@ void Exporter::writeModelsToFile(string outFilePath)
 
 
 	//Animation states
-
 	for (Skeleton skeleton : skel)
 	{
 		for (Joint joint : skeleton.jointVector)
