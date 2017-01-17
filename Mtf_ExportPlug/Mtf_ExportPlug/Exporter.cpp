@@ -143,8 +143,36 @@ void Exporter::writeModelsToFile(string outFilePath)
 
 
 	//Animation states
-	//Keyframes
 
+	for (Skeleton skeleton : skel)
+	{
+		for (Joint joint : skeleton.jointVector)
+		{
+			hAnimationState expState;
+			for(sImAnimationState state: joint.animationState)
+			{
+				expState.keyOffset = keyCounter * sizeof(sKeyFrame);
+				expState.keyCount = state.keyList.size();
+
+				outFile.write((const char*)&expState, sizeof(hAnimationState));
+				dataSize += sizeof(hAnimationState);
+				keyCounter += state.keyList.size();
+			}
+		}
+	}
+
+	//Keyframes
+	for (Skeleton skeleton : skel)
+	{
+		for(Joint joint : skeleton.jointVector)
+		{
+			for (sImAnimationState state : joint.animationState)
+			{
+				outFile.write((const char*)state.keyList.data(),state.keyList.size() * sizeof(sKeyFrame));
+				dataSize += state.keyList.size() * sizeof(sKeyFrame);
+			}
+		}
+	}
 
 	//Vertices
 	for (assembleStructs::Mesh mesh : meshes)
@@ -155,6 +183,7 @@ void Exporter::writeModelsToFile(string outFilePath)
 			bufferSize += sizeof(sVertex) * sizeof(sVertex) * mesh.vertList.size();
 		}
 	}
+	//skeletal vertice
 	for (assembleStructs::Mesh mesh : meshes)
 	{
 		if (mesh.skelVertList.size() > 0)
@@ -177,6 +206,7 @@ void Exporter::writeModelsToFile(string outFilePath)
 	outFile.seekp(std::ios::beg);
 	outFile.write((const char*)&dataSize, sizeof(int));
 	outFile.write((const char*)&bufferSize, sizeof(int));
+
 	outFile.close();
 }
 
