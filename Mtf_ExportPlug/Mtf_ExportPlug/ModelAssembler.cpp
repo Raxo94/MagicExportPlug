@@ -79,7 +79,7 @@ void ModelAssembler::AssembleMesh(MObject MObjectMeshNode,MObject Parent)
 		tempMesh.transform = GetTransform(transform);
 
 		//Mesh
-		vector<Vertex>nodeVertices;
+		vector<sVertex>nodeVertices;
 		MFloatPointArray pts;
 		MIntArray vertexCounts;
 		MIntArray polygonVertexIDs;
@@ -391,7 +391,7 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 			vector<vertexDeform>VertexDeformVector = GetSkinWeightsList(skinPath, skinCluster, skeleton.jointVector);
 
 			//Positions Normals UVs.
-			vector<SkeletonVertex>nodeVertices;
+			vector<sSkeletonVertex>nodeVertices;
 			MFloatPointArray pts; //this is used for positions
 			MIntArray vertexCounts;
 			MIntArray polygonVertexIDs;
@@ -434,7 +434,8 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 				nodeVertices.at(i).vert.UV[0] = u[uvIDs[triangleIndices[i]]];
 				nodeVertices.at(i).vert.UV[1] = v[uvIDs[triangleIndices[i]]];
 
-				nodeVertices.at(i).deformer = VertexDeformVector[polygonVertexIDs[triangleIndices[i]]];
+				nodeVertices.at(i).weights = VertexDeformVector[polygonVertexIDs[triangleIndices[i]]].weights;
+				nodeVertices.at(i).influences = VertexDeformVector[polygonVertexIDs[triangleIndices[i]]].influences;
 
 				//Vi kollar till vilken vertex trianglen pekar på och hämtar den vikten
 			}
@@ -446,9 +447,9 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 
 
 
-void ModelAssembler::ProcessSkeletalIndexes(vector<SkeletonVertex>& unfilteredVertexVector, vector<int>& indexes)
+void ModelAssembler::ProcessSkeletalIndexes(vector<sSkeletonVertex>& unfilteredVertexVector, vector<int>& indexes)
 {
-	vector<SkeletonVertex> UniqueVertexes;
+	vector<sSkeletonVertex> UniqueVertexes;
 
 	for (unsigned int i = 0; i < unfilteredVertexVector.size(); i++)
 	{
@@ -839,7 +840,7 @@ Transform ModelAssembler::GetTransform(MFnTransform & transform)
 }
 
 
-bool assembleStructs::operator==(const assembleStructs::Vertex & left, const assembleStructs::Vertex & right)
+bool assembleStructs::operator==(const sVertex & left, const sVertex & right)
 {
 	if (left.pos == right.pos)
 	{
@@ -853,7 +854,8 @@ bool assembleStructs::operator==(const assembleStructs::Vertex & left, const ass
 	return false;
 }
 
-bool assembleStructs::operator==(const assembleStructs::SkeletonVertex & left, const assembleStructs::SkeletonVertex & right)
+
+bool assembleStructs::operator==(const sSkeletonVertex & left, const sSkeletonVertex & right)
 {
 	if (left.vert.pos == right.vert.pos)
 	{
@@ -861,15 +863,15 @@ bool assembleStructs::operator==(const assembleStructs::SkeletonVertex & left, c
 		{
 			if (left.vert.UV == right.vert.UV)
 			{
-				if (left.deformer.influences == right.deformer.influences)
+				if (left.influences == right.influences)
 				{
-					if (left.deformer.weights == right.deformer.weights)
+					if (left.weights == right.weights)
 					{
 						//Deformer check may be uneccesary- need to be proven first
 						return true;
 					}
 				}
-			}	
+			}
 		}
 	}
 

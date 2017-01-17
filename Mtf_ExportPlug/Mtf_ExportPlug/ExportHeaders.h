@@ -108,8 +108,8 @@ struct sVertex
 struct sSkeletonVertex
 {
 	sVertex vert;
-	int influences[4];
-	float weights[4];
+	std::array<int, 4>influences;
+	std::array<float, 4>weights;
 };
 
 struct hSpawn

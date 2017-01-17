@@ -21,21 +21,6 @@ namespace assembleStructs
 	};
 
 
-	struct Vertex
-	{
-		std::array<float, 3>  pos;
-		std::array<float, 3>  normal;
-		std::array<float, 2>  UV;
-		std::array<float, 3>  tangent;
-	};
-
-	struct SkeletonVertex
-	{
-		Vertex vert;
-		vertexDeform deformer;
-	};
-
-
 	struct sImAnimationState
 	{
 		std::vector<sKeyFrame> keyList;
@@ -61,8 +46,8 @@ namespace assembleStructs
 	
 
 	//Vertex Compare Used for indexing
-	bool operator==(const assembleStructs::Vertex& left, const assembleStructs::Vertex& right);
-	bool operator == (const assembleStructs::SkeletonVertex& left, const assembleStructs::SkeletonVertex& right);
+	bool operator==(const sVertex& left, const sVertex& right);
+	bool operator == (const sSkeletonVertex& left, const sSkeletonVertex& right);
 
 	struct Material
 	{
@@ -110,8 +95,8 @@ namespace assembleStructs
 
 		MObject object;
 
-		std::vector<Vertex> vertList;
-		std::vector<SkeletonVertex> skelVertList;
+		std::vector<sVertex> vertList;
+		std::vector<sSkeletonVertex> skelVertList;
 		std::vector<int> indexList;
 		bool isAnimated = false;
 		MDagPath Meshpath; //to be used only in assambler
@@ -165,7 +150,7 @@ private:
 
 	void ProcessInverseBindpose(MFnSkinCluster&, Skeleton&, MFnDependencyNode& parentNode); //gets inversebindPose and globalInverseBindpose
 	void ProcessSkeletalVertex (MFnSkinCluster& skinCluster, Skeleton& skeleton); //Gets vertices and weights for each triangleIndex
-	void ProcessSkeletalIndexes(vector<SkeletonVertex>& vertexVector, vector<int>& indexes); //Modifys vertexList and Adds indexes
+	void ProcessSkeletalIndexes(vector<sSkeletonVertex>& vertexVector, vector<int>& indexes); //Modifys vertexList and Adds indexes
 	void GetJointParentID(MFnDependencyNode & jointDep, Joint & currentJoint, vector<Joint>OtherJoints); //gets the JointList index index of the joints parent
 
 	vector<vertexDeform> GetSkinWeightsList(MDagPath skinPath, MFnSkinCluster& skinCluster, vector<Joint>joints);

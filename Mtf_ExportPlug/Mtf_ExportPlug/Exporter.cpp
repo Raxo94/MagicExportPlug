@@ -54,7 +54,7 @@ void Exporter::writeModelsToFile(string outFilePath)
 	expModel.numMeshes = assamble->GetMeshVector().size();
 	expModel.numBBoxes = assamble->GetBoundingBoxVector().size();
 	expModel.numSkeletons = assamble->GetSkeletonVector().size();
-	expModel.TYPE = assamble->GetType();
+	
 
 
 	for (Skeleton skeleton : assamble->GetSkeletonVector())
@@ -70,20 +70,16 @@ void Exporter::writeModelsToFile(string outFilePath)
 			}
 		}
 	}
-	for (assembleStructs::Mesh standardMesh:assamble->GetMeshVector())
+	for (assembleStructs::Mesh mesh:assamble->GetMeshVector())
 	{
-		expModel.numVertices += standardMesh.vertList.size();
-		expModel.numIndices += standardMesh.indexList.size();
+		expModel.numVertices += mesh.vertList.size();
+		expModel.numSkeletonVertices += mesh.skelVertList.size();
+		expModel.numIndices += mesh.indexList.size();
 	}
-
-	for (assembleStructs::Mesh animMesh : assamble->GetMeshVector())
-	{
-		expModel.numSkeletonVertices += animMesh.skelVertList.size();
-		expModel.numIndices += animMesh.indexList.size();
-	}
-	
+	expModel.TYPE = assamble->GetType();
 
 	//Materials are in the importer stored in meshes, for the engine they are stored in models.
+
 	const char* NewMaterialName = &meshes.at(0).material.name[0];
 	memcpy(expModel.materialName, &meshes.at(0).material.name[0], 22);
 	memcpy(&expModel.materialName[strlen(NewMaterialName)], ".material", 10);
@@ -102,7 +98,7 @@ void Exporter::writeModelsToFile(string outFilePath)
 		dataSize += sizeof(sOffset);
 		outFile.write((const char*)&currOffset, sizeof(sOffset));
 		currOffset.vertex += mesh.vertList.size();
-		currOffset.skeletonVertex += 0;
+		currOffset.skeletonVertex += mesh.skelVertList.size();
 		currOffset.index += mesh.indexList.size();
 	}
 
@@ -111,22 +107,24 @@ void Exporter::writeModelsToFile(string outFilePath)
 	for (assembleStructs::Mesh mesh : meshes)
 	{
 		dataSize += sizeof(hMesh);
-		expMesh.numAnimVertices = 0;
+		expMesh.numAnimVertices = mesh.skelVertList.size();
 		expMesh.numVertices = mesh.vertList.size();
 		expMesh.numIndexes = mesh.indexList.size();
-		expMesh.parent = sHierarchy();
+		expMesh.parent = mesh.parent;
 			
 		memcpy(expMesh.pos, &mesh.transform.pos, 3);
 		memcpy(expMesh.rot, &mesh.transform.rot, 3);
 		memcpy(expMesh.scale,&mesh.transform.scale, 3);
 
-		expMesh.parentJoint = sJointChild();
-		expMesh.parentMesh = sMeshChild();
+		expMesh.parentJoint = mesh.parentJoint;
+		expMesh.parentMesh = mesh.parentMesh;
 
 		outFile.write((const char*)&expMesh, sizeof(hMesh));
 	}
 
 	//Boundingboxes
+
+
 	//Joints
 	//Animation states
 	//Keyframes
@@ -137,9 +135,17 @@ void Exporter::writeModelsToFile(string outFilePath)
 	{
 		if (mesh.vertList.size() > 0)
 		{
-			outFile.write((const char*)mesh.vertList.data(), sizeof(assembleStructs::Vertex) * mesh.vertList.size());
-			bufferSize += sizeof(assembleStructs::Vertex) * mesh.vertList.size();
-		}	
+			outFile.write((const char*)mesh.vertList.data(), sizeof(sVertex) * mesh.vertList.size());
+			bufferSize += sizeof(sVertex) * sizeof(sVertex) * mesh.vertList.size();
+		}
+	}
+	for (assembleStructs::Mesh mesh : meshes)
+	{
+		if (mesh.skelVertList.size() > 0)
+		{
+			outFile.write((const char*)mesh.skelVertList.data(), sizeof(sSkeletonVertex) * mesh.skelVertList.size());
+			bufferSize += sizeof(sSkeletonVertex) * sizeof(sSkeletonVertex) * mesh.skelVertList.size();
+		}
 	}
 
 	//Indices
