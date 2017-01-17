@@ -8,6 +8,12 @@ ModelAssembler::ModelAssembler()
 	AssembleBoundingBoxes();
 	ConnectMaterialsToMeshes();
 
+	for (Mesh& mesh : this->Meshes)
+	{
+		assambleHierarki(mesh.object, mesh.parent, mesh.parentJoint, mesh.parentMesh);
+	}
+	
+
 	
 }
 
@@ -49,16 +55,26 @@ eModelType & ModelAssembler::GetType()
 void ModelAssembler::AssembleMesh(MObject MObjectMeshNode,MObject Parent)
 {
 	MFnMesh meshNode(MObjectMeshNode);
-	
-	if (!meshNode.hasAttribute("BOUNDINGBOX")) //if mesh is not a boundingbox
+	MFnTransform transform(Parent); //the parent is the transform
+
+
+	if (!meshNode.hasAttribute("BOUNDINGBOX")&&!transform.hasAttribute("BOUNDINGBOX")) //if mesh is not a boundingbox
 	{
+
 		//names
 		Mesh tempMesh;
+
+		//tempMesh.dagNode = hello;
+		
 		memcpy(&tempMesh.name, meshNode.name().asChar(), sizeof(const char[256]));//MeshName
 		tempMesh.nameMString = meshNode.name();
 
+		tempMesh.object = MObjectMeshNode;
+
+		
+
 		//transform
-		MFnTransform transform(Parent); //the parent is the transform
+		
 		tempMesh.transform_Name_Mstring = transform.name();
 		tempMesh.transform = GetTransform(transform);
 
@@ -159,6 +175,13 @@ void ModelAssembler::AssembleSkeletonsAndMeshes()
 			MObject child = dagNode.child(i);
 			MFnDependencyNode childNode(child);
 			MString childName = childNode.name();
+
+			if (child.hasFn(MFn::kTransform))
+			{
+				MString model = childNode.name(); //well this is basicaly all things.
+
+			}
+
 		}
 		
 		int parentCount = dagNode.parentCount();
@@ -342,75 +365,82 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 
 	for (size_t i = 0; i < geometryCount; ++i) //if several meshes are connected go trough them all.
 	{
-		Mesh animMesh;
-		animMesh.isAnimated = true;
-
-		unsigned int index = skinCluster.indexForOutputConnection(i, &res); 
+		unsigned int index = skinCluster.indexForOutputConnection(i, &res);
 
 		MDagPath skinPath;  res = skinCluster.getPathAtIndex(index, skinPath); //get weights for each vertex {8 in a cube}
 		MFnMesh meshNode(skinPath.node()); //the meshNode
-		animMesh.Meshpath = skinPath;
+		MFnTransform transform(meshNode.parent(0));
 
-		//MESHNAME
-		MFnDependencyNode meshnode(skinPath.node());
-		MString meshName = animMesh.nameMString = meshnode.name(); //for debuging purposes
-		 
-		memcpy(&animMesh.name, meshName.asChar(), meshName.length() * sizeof(char));
+		if (!meshNode.hasAttribute("BOUNDINGBOX")&& !transform.hasAttribute("BOUNDINGBOX")) //If not boundingBox
+		{
+			Mesh animMesh;
+			animMesh.Meshpath = skinPath;
 
-		//weights
-		vector<vertexDeform>VertexDeformVector = GetSkinWeightsList(skinPath, skinCluster, skeleton.jointVector);
 
-		//Positions Normals UVs.
-		vector<SkeletonVertex>nodeVertices;
-		MFloatPointArray pts; //this is used for positions
-		MIntArray vertexCounts;
-		MIntArray polygonVertexIDs; 
-		MFloatArray u, v;
-		MIntArray uvCounts;
-		MIntArray uvIDs; 
-		MFloatVectorArray normals;
-		MIntArray triangleCounts;
-		MIntArray triangleVertexIDs;
-		MVector vertexNormal;
-		MIntArray normalList, normalCount; // here is the normals
+			animMesh.isAnimated = true;
 
-		meshNode.getPoints(pts, MSpace::kObject);
-		meshNode.getUVs(u, v, 0);
-		meshNode.getAssignedUVs(uvCounts, uvIDs); //indices for UV:s
 
-		meshNode.getVertices(vertexCounts, polygonVertexIDs); //get vertex polygon indices
 
-		meshNode.getNormals(normals, MSpace::kObject);
-		
-		meshNode.getNormalIds(normalCount, normalList);
+			//MESHNAME
+			MFnDependencyNode meshnode(skinPath.node());
+			MString meshName = animMesh.nameMString = meshnode.name(); //for debuging purposes
 
-		//indices
-		MIntArray triangleIndices;
-		MIntArray triangleCountsOffsets;
-		meshNode.getTriangleOffsets(triangleCountsOffsets, triangleIndices);
-		nodeVertices.resize(triangleIndices.length());
-		//now lets get all triangleVertexes.
-		for (unsigned int i = 0; i < triangleIndices.length(); i++)
-		{ 
+			memcpy(&animMesh.name, meshName.asChar(), meshName.length() * sizeof(char));
 
-			nodeVertices.at(i).vert.pos[0] = pts[polygonVertexIDs[triangleIndices[i]]].x;
-			nodeVertices.at(i).vert.pos[1] = pts[polygonVertexIDs[triangleIndices[i]]].y;
-			nodeVertices.at(i).vert.pos[2] = pts[polygonVertexIDs[triangleIndices[i]]].z;
+			//weights
+			vector<vertexDeform>VertexDeformVector = GetSkinWeightsList(skinPath, skinCluster, skeleton.jointVector);
 
-			nodeVertices.at(i).vert.normal[0] = normals[normalList[triangleIndices[i]]].x;
-			nodeVertices.at(i).vert.normal[1] = normals[normalList[triangleIndices[i]]].y;
-			nodeVertices.at(i).vert.normal[2] = normals[normalList[triangleIndices[i]]].z;
+			//Positions Normals UVs.
+			vector<SkeletonVertex>nodeVertices;
+			MFloatPointArray pts; //this is used for positions
+			MIntArray vertexCounts;
+			MIntArray polygonVertexIDs;
+			MFloatArray u, v;
+			MIntArray uvCounts;
+			MIntArray uvIDs;
+			MFloatVectorArray normals;
+			MIntArray triangleCounts;
+			MIntArray triangleVertexIDs;
+			MVector vertexNormal;
+			MIntArray normalList, normalCount; // here is the normals
 
-			nodeVertices.at(i).vert.UV[0] = u[uvIDs[triangleIndices[i]]];
-			nodeVertices.at(i).vert.UV[1] = v[uvIDs[triangleIndices[i]]];
+			meshNode.getPoints(pts, MSpace::kObject);
+			meshNode.getUVs(u, v, 0);
+			meshNode.getAssignedUVs(uvCounts, uvIDs); //indices for UV:s
 
-			nodeVertices.at(i).deformer = VertexDeformVector[ polygonVertexIDs[ triangleIndices[i]]];
+			meshNode.getVertices(vertexCounts, polygonVertexIDs); //get vertex polygon indices
 
-			//Vi kollar till vilken vertex trianglen pekar på och hämtar den vikten
+			meshNode.getNormals(normals, MSpace::kObject);
+
+			meshNode.getNormalIds(normalCount, normalList);
+
+			//indices
+			MIntArray triangleIndices;
+			MIntArray triangleCountsOffsets;
+			meshNode.getTriangleOffsets(triangleCountsOffsets, triangleIndices);
+			nodeVertices.resize(triangleIndices.length());
+			//now lets get all triangleVertexes.
+			for (unsigned int i = 0; i < triangleIndices.length(); i++)
+			{
+
+				nodeVertices.at(i).vert.pos[0] = pts[polygonVertexIDs[triangleIndices[i]]].x;
+				nodeVertices.at(i).vert.pos[1] = pts[polygonVertexIDs[triangleIndices[i]]].y;
+				nodeVertices.at(i).vert.pos[2] = pts[polygonVertexIDs[triangleIndices[i]]].z;
+
+				nodeVertices.at(i).vert.normal[0] = normals[normalList[triangleIndices[i]]].x;
+				nodeVertices.at(i).vert.normal[1] = normals[normalList[triangleIndices[i]]].y;
+				nodeVertices.at(i).vert.normal[2] = normals[normalList[triangleIndices[i]]].z;
+
+				nodeVertices.at(i).vert.UV[0] = u[uvIDs[triangleIndices[i]]];
+				nodeVertices.at(i).vert.UV[1] = v[uvIDs[triangleIndices[i]]];
+
+				nodeVertices.at(i).deformer = VertexDeformVector[polygonVertexIDs[triangleIndices[i]]];
+
+				//Vi kollar till vilken vertex trianglen pekar på och hämtar den vikten
+			}
+			animMesh.skelVertList = nodeVertices;
+			skeleton.MeshVector.push_back(animMesh);
 		}
-		animMesh.skelVertList = nodeVertices;
-		skeleton.MeshVector.push_back(animMesh);
-
 	} //End of Current Mesh Looping to next
 }
 
@@ -652,6 +682,47 @@ void ModelAssembler::ConnectMaterialsToMeshes()
 	}
 }
 
+void ModelAssembler::assambleHierarki(MObject object, sHierarchy & parent, sJointChild & parentJoint, sMeshChild & parentMesh)
+{
+	MFnDagNode node(object);
+	MFnDagNode transform = node.parent(0); //yepp 
+
+	unsigned int parentCount = node.parentCount();
+	for (size_t i = 0; i < parentCount; i++)
+	{
+		MFnDagNode parentNode = transform.parent(i);
+		MString parentName = parentNode.name();
+		MString parentNodetype = parentNode.typeName();
+
+		if (parentNodetype == "joint")
+		{
+			parent.hasParentJoint = true;
+			for (Joint joint : allModelJoints)
+			{
+				if (parentNodetype == joint.name)
+				{
+					parentJoint.parentSkeletonIndex = joint.skeletonID;
+					parentJoint.parentJointIndex = joint.ID;
+				}
+			}
+		}
+		if (parentNodetype == "transform")
+		{
+			parent.hasParentMesh = true;
+			for (size_t index = 0; index < Meshes.size(); index++)
+			{
+				//the reason for this is that parenting is always done to transforms not meshes.
+				if (parentName == Meshes.at(index).transform_Name_Mstring)
+				{
+					parentMesh.parentMeshIndex = index;
+
+				}
+			}
+		}
+
+	}
+}
+
 void ModelAssembler::AssembleBoundingBoxes()
 {
 	MObject parent;
@@ -680,47 +751,12 @@ void ModelAssembler::AssembleBoundingBoxes()
 						boundingBox.pos[i].z = point.z;
 					}
 
-
-					unsigned int parentCount = meshNode.parentCount();
-					for (size_t i = 0; i < parentCount; i++)
-					{
-						MFnDagNode parentNode = transform.parent(i);
-						MString parentName = parentNode.name();
-						MString parentNodetype = parentNode.typeName();
-
-						if (parentNodetype == "joint")
-						{
-							boundingBox.parent.hasParentJoint = true;
-							for (Joint joint : allModelJoints)
-							{
-								if (parentName == joint.name)
-								{
-									boundingBox.jointParent.parentSkeletonIndex = joint.skeletonID;
-									boundingBox.jointParent.parentJointIndex = joint.ID;
-								}
-							}
-						}
-						if (parentNodetype == "transform")
-						{
-							boundingBox.parent.hasParentMesh = true;
-							for (size_t index = 0; index < Meshes.size(); index++)
-							{
-								//the reason for this is that parenting is always done to transforms not meshes.
-								if (parentName == Meshes.at(index).transform_Name_Mstring)
-								{
-									boundingBox.meshParent.parentMeshIndex = index;
-
-								}
-								
-							}
-						}
-
-						BBoxes.push_back(boundingBox);
+					assambleHierarki(it.currentItem(), boundingBox.parent, boundingBox.jointParent, boundingBox.meshParent);
+					BBoxes.push_back(boundingBox);
 
 					}
 				}
 			}
-		}
 		parent = it.currentItem();
 	}
 }

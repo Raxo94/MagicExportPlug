@@ -42,6 +42,7 @@
 #include <maya/Mquaternion.h>
 #include <maya/MItMeshVertex.h>
 #include <maya/MFnIkJoint.h>
+#include <maya/MFnMesh.h>
 
 #include <vector>
 

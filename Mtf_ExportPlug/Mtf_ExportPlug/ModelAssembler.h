@@ -93,16 +93,22 @@ namespace assembleStructs
 	{
 		int skeletonIndex = NOTSET;
 		int materialID = NOTSET;
-		Material material;
+
+		
 		sHierarchy parent;
 		sJointChild parentJoint;
 		sMeshChild parentMesh;
+
+
 		std::array<char, 256> name;
 		MString nameMString;
 		MString transform_Name_Mstring;
 
 		//This mesh's local transform
 		Transform transform;
+		Material material;
+
+		MObject object;
 
 		std::vector<Vertex> vertList;
 		std::vector<SkeletonVertex> skelVertList;
@@ -154,6 +160,7 @@ private:
 	void AssembleSkeletonsAndMeshes();
 	void AssembleMaterials();
 	void ConnectMaterialsToMeshes();
+	void assambleHierarki(MObject object, sHierarchy& parent, sJointChild& parentJoint,sMeshChild& parentMesh);
 	void AssembleBoundingBoxes();
 
 	void ProcessInverseBindpose(MFnSkinCluster&, Skeleton&, MFnDependencyNode& parentNode); //gets inversebindPose and globalInverseBindpose
