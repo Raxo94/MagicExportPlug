@@ -563,9 +563,8 @@ void ModelAssembler::AssembleMaterials()
 		MObject data;
 
 		MFnDependencyNode materialNode(mNode);
-		MString materialName = materialNode.name();
-		memcpy(&tempMaterial.name, materialName.asChar(), materialName.length() * sizeof(char));
-
+		tempMaterial.name = materialNode.name();
+		//memcpy(&tempMaterial.name, materialName.asChar(), materialName.length() * sizeof(char))
 		//Get MaterialNode Plugs
 		MPlug outColor = materialNode.findPlug("outColor"); //to go further in the plugs
 		MPlug color = materialNode.findPlug("color"); //to get the color values

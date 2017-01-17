@@ -76,9 +76,16 @@ void Exporter::writeModelsToFile(string outFilePath)
 
 
 	//Materials are in the importer stored in meshes, for the engine they are stored in models.
-	const char* NewMaterialName = &meshes.at(0).material.name[0];
-	memcpy(expModel.materialName, &meshes.at(0).material.name[0], 22);
-	memcpy(&expModel.materialName[strlen(NewMaterialName)], ".material", 10);
+
+
+	
+	memcpy(&expModel.materialName, meshes.at(0).material.name.asChar(), meshes.at(0).material.name.length()); 
+	//expModel.materialName += ".material";
+	//meshes.at(0).material.name;
+	//char koko[256] = meshes[0].material.name;
+	//memcpy(expModel.materialName, (char*)meshes.at(0).material.name, 22);
+	//memcpy(expModel.materialName, &meshes.at(0).material.name[0], 22);
+	memcpy(&expModel.materialName[strlen(expModel.materialName)], ".material", 10);
 
 	outFile.write((const char*)&expModel, sizeof(hModel));
 
@@ -226,7 +233,8 @@ void Exporter::writeMaterialsToFile(string outFilePath)
 	{
 		if (materials.at(i).boundMeshes.size() != 0)
 		{
-			const char* popo = &materials.at(i).name[0];
+			//const char* popo = &materials.at(i).name[0];
+			const char* popo = materials.at(i).name.asChar();
 			string shit = popo;
 			std::ofstream outFile(outFilePath + shit + ".material", std::ofstream::binary);
 
