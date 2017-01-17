@@ -123,9 +123,25 @@ void Exporter::writeModelsToFile(string outFilePath)
 	}
 
 	//Boundingboxes
-
-
 	//Joints
+	hSkeleton expSkeleton;
+	for (Skeleton skeleton : skel)
+	{
+		hJoint expJoint;
+		for (Joint joint : skeleton.jointVector)
+		{
+			expJoint.animationStateCount = joint.animationState.size();
+			expJoint.globalBindposeInverse = joint.globalBindPoseInverse;
+			expJoint.parentJointID = joint.parentID;
+			expJoint.animationStateOffset = animationLayerCounter * sizeof(hAnimationState);
+			
+			outFile.write((const char*)&expJoint, sizeof(hJoint));
+			dataSize += sizeof(hJoint);
+			animationLayerCounter += joint.animationState.size();
+		}
+	}
+
+
 	//Animation states
 	//Keyframes
 

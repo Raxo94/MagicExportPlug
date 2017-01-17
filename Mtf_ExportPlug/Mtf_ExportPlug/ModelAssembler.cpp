@@ -8,6 +8,9 @@ ModelAssembler::ModelAssembler()
 	AssembleBoundingBoxes();
 	ConnectMaterialsToMeshes();
 
+	size_t comp = sizeof(std::array<float, 16>);
+	size_t comp2 = sizeof(float[16]);
+
 	for (Mesh& mesh : this->Meshes)
 	{
 		assambleHierarki(mesh.object, mesh.parent, mesh.parentJoint, mesh.parentMesh);

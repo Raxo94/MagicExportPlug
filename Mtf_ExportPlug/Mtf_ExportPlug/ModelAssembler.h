@@ -37,10 +37,6 @@ namespace assembleStructs
 		std::vector<sImAnimationState> animationState;
 		MDagPath dagPath;
 		MString name;
-
-		
-		//to be used only in assambler
-		//joints har koll på olika keyframes för olika lager
 	};
 
 	

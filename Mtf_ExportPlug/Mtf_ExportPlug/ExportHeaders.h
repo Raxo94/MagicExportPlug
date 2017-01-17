@@ -58,7 +58,7 @@ struct hAnimationState
 struct hJoint
 {
 	int parentJointID;
-	float globalBindposeInverse[16];
+	std::array<float, 16> globalBindposeInverse;
 
 	int animationStateCount;
 	int animationStateOffset;
