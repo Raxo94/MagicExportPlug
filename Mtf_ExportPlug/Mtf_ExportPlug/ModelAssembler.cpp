@@ -8,9 +8,6 @@ ModelAssembler::ModelAssembler()
 	AssembleBoundingBoxes();
 	ConnectMaterialsToMeshes();
 
-	size_t comp = sizeof(std::array<float, 16>);
-	size_t comp2 = sizeof(float[16]);
-
 	for (Mesh& mesh : this->Meshes)
 	{
 		assambleHierarki(mesh.object, mesh.parent, mesh.parentJoint, mesh.parentMesh);
@@ -221,6 +218,7 @@ void ModelAssembler::AssembleSkeletonsAndMeshes()
 						ProcessSkeletalIndexes(skeleton.MeshVector.at(i).skelVertList, skeleton.MeshVector.at(i).indexList);
 						MFnTransform transform= skeleton.MeshVector.at(i).Meshpath.transform();
 						skeleton.MeshVector.at(i).transform = GetTransform(transform);
+						this->Meshes.push_back(skeleton.MeshVector.at(i));
 					}
 					
 					ProcessKeyframes(skinCluster, skeleton);
@@ -492,7 +490,7 @@ void ModelAssembler::ProcessKeyframes(MFnSkinCluster & skinCluster, Skeleton & s
 
 	vector<MString> animLayers = GetAnimLayers("BaseAnimation");
 	sImAnimationState keyList;
-	for (Joint joint : skeleton.jointVector)
+	for (Joint& joint : skeleton.jointVector)
 	{
 
 		joint.animationStateCount = animLayers.size();

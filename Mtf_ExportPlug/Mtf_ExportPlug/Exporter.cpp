@@ -63,10 +63,9 @@ void Exporter::writeModelsToFile(string outFilePath)
 		expModel.numJoints += skeleton.jointVector.size();
 		for (Joint joint : skeleton.jointVector)
 		{
-			expModel.numAnimationStates = skeleton.jointVector.at(0).animationState.size();
-			for (int i = 0; i < joint.animationState.size(); i++)
+			for (sImAnimationState state: joint.animationState)
 			{
-				expModel.numKeyframes += joint.animationState.at(i).keyList.size();
+				expModel.numKeyframes += state.keyList.size();
 			}
 		}
 	}
