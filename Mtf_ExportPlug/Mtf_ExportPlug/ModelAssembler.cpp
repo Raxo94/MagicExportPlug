@@ -386,7 +386,7 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 			MFnDependencyNode meshnode(skinPath.node());
 			MString meshName = animMesh.nameMString = meshnode.name(); //for debuging purposes
 
-			memcpy(&animMesh.name, meshName.asChar(), meshName.length() * sizeof(char));
+			memcpy(&animMesh.name, meshName.asChar(), meshName.length() * sizeof(char)+1);
 
 			//weights
 			vector<vertexDeform>VertexDeformVector = GetSkinWeightsList(skinPath, skinCluster, skeleton.jointVector);
@@ -564,7 +564,7 @@ void ModelAssembler::AssembleMaterials()
 
 		MFnDependencyNode materialNode(mNode);
 		MString materialName = materialNode.name();
-		memcpy(&tempMaterial.name, materialName.asChar(), materialName.length() * sizeof(char)+1);
+		memcpy(&tempMaterial.name, materialName.asChar(), materialName.length() * sizeof(char));
 
 		//Get MaterialNode Plugs
 		MPlug outColor = materialNode.findPlug("outColor"); //to go further in the plugs
@@ -650,10 +650,11 @@ void ModelAssembler::AssembleMaterials()
 							MFnDependencyNode dagSetMemberNode(dagSetMemberConnections[d].node()); //in order to get materials meshes
 							if (strcmp(dagSetMemberNode.name().asChar(), "shaderBallGeom1") != 0) 
 							{
-								std::array<char, 256> meshName;
+								//std::array<char, 256> meshName;
 								MFnMesh mesh(dagSetMemberNode.object()); //get the mesh in order to get the name of the mesh
-								memcpy(&meshName, mesh.name().asChar(), sizeof(char[256])); //get the name of mesh bound to material
-								tempMaterial.boundMeshes.push_back(meshName);
+								//memcpy(&meshName, mesh.name().asChar(), materialName.length() * sizeof(char) + 1); //get the name of mesh bound to material
+								
+								tempMaterial.boundMeshes.push_back(mesh.name());
 
 							}
 						}
@@ -671,11 +672,11 @@ void ModelAssembler::ConnectMaterialsToMeshes()
 
 	for (Material material : materials)
 	{
-		for (std::array<char, 256> boundMeshName : material.boundMeshes)
+		for (MString boundMeshName : material.boundMeshes)
 		{
 			for (size_t j = 0; j < Meshes.size(); j++)
 			{
-				if (boundMeshName == Meshes.at(j).name)
+				if (boundMeshName == Meshes.at(j).nameMString)
 				{
 					Meshes.at(j).material = material;
 				}

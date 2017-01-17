@@ -48,7 +48,7 @@ namespace assembleStructs
 	struct Material
 	{
 		std::array<char, 256> name;
-		vector<std::array<char, 256> > boundMeshes;
+		vector<MString> boundMeshes;
 		std::array<char, 256> textureFilepath;
 		std::array<char, 256> specularFilepath;
 		std::array<char, 256> diffuseFilepath;

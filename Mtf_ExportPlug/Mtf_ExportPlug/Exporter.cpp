@@ -33,7 +33,7 @@ void Exporter::writeModelsToFile(string outFilePath)
 	std::vector<sBBox> BoundingBoxes = assamble->GetBoundingBoxVector();
 	std::vector<assembleStructs::Skeleton> skel = assamble->GetSkeletonVector();
 
-	//std::string outPath = outFilePath + std::string(&meshes.at(0).name + ".model");
+	std::string outPath = outFilePath + std::string(&meshes.at(0).name[0]) + ".model";
 	std::ofstream outFile(outFilePath + std::string(&meshes.at(0).name[0]) + ".model", std::ofstream::binary); //output file stream
 
 	//Dataheader
@@ -54,13 +54,13 @@ void Exporter::writeModelsToFile(string outFilePath)
 	expModel.numSkeletons = assamble->GetSkeletonVector().size();
 	
 
-	for (Skeleton skeleton : assamble->GetSkeletonVector())
+	for (Skeleton& skeleton1 : assamble->GetSkeletonVector())
 	{
-		expModel.numJoints += skeleton.jointVector.size();
-		for (Joint joint : skeleton.jointVector)
+		expModel.numJoints += skeleton1.jointVector.size();
+		for (Joint& joint : skeleton1.jointVector)
 		{
 			expModel.numAnimationStates += joint.animationState.size();
-			for (sImAnimationState state: joint.animationState)
+			for (sImAnimationState& state: joint.animationState)
 			{
 				expModel.numKeyframes += state.keyList.size();
 			}
@@ -121,13 +121,23 @@ void Exporter::writeModelsToFile(string outFilePath)
 	//Boundingboxes
 	outFile.write((const char*)BoundingBoxes.data(), BoundingBoxes.size() * sizeof(sBBox));
 	dataSize += BoundingBoxes.size() * sizeof(sBBox);
+	
+	//Skeletons
+	hSkeleton expSkeleton;
+	for (Skeleton& skeleton2 : skel)
+	{
+		expSkeleton.jointOffset = jointCounter * sizeof(hJoint);
+		expSkeleton.jointCount = skeleton2.jointVector.size();
+		outFile.write((const char*)&expSkeleton, sizeof(hSkeleton));
+		dataSize += sizeof(hSkeleton);
+		jointCounter += skeleton2.jointVector.size();
+	}
 
 	//Joints
-	hSkeleton expSkeleton;
-	for (Skeleton skeleton : skel)
+	for (Skeleton skeleton3 : skel)
 	{
 		hJoint expJoint;
-		for (Joint joint : skeleton.jointVector)
+		for (Joint& joint : skeleton3.jointVector)
 		{
 			expJoint.animationStateCount = joint.animationState.size();
 			expJoint.globalBindposeInverse = joint.globalBindPoseInverse;
@@ -142,9 +152,9 @@ void Exporter::writeModelsToFile(string outFilePath)
 
 
 	//Animation states
-	for (Skeleton skeleton : skel)
+	for (Skeleton& skeleton4 : skel)
 	{
-		for (Joint joint : skeleton.jointVector)
+		for (Joint& joint : skeleton4.jointVector)
 		{
 			hAnimationState expState;
 			for(sImAnimationState state: joint.animationState)
@@ -160,9 +170,9 @@ void Exporter::writeModelsToFile(string outFilePath)
 	}
 
 	//Keyframes
-	for (Skeleton skeleton : skel)
+	for (Skeleton skeleton5 : skel)
 	{
-		for(Joint joint : skeleton.jointVector)
+		for(Joint& joint : skeleton5.jointVector)
 		{
 			for (sImAnimationState state : joint.animationState)
 			{
