@@ -127,9 +127,9 @@ struct hMesh
 	sJointChild parentJoint;
 	sMeshChild parentMesh;
 	//This mesh's local transform
-	float pos[3];
-	float rot[3];
-	float scale[3];
+	std::array<float, 3> pos;
+	std::array<float, 3> rot;
+	std::array<float, 3> scale;
 
 	int numAnimVertices;
 	int numVertices;

@@ -29,11 +29,12 @@ namespace assembleStructs
 	
 	struct Joint
 	{
-		int ID, parentID;
-		int skeletonID;
-		std::array<float, 16> bindPoseInverse, globalBindPoseInverse;
+		int	parentID = NOTSET;
+		int ID = NOTSET;
+		int skeletonID = NOTSET;
+		std::array<float, 16> globalBindPoseInverse;
 		
-		int animationStateCount;
+		int animationStateCount = NOTSET;
 		std::vector<sImAnimationState> animationState;
 		MDagPath dagPath;
 		MString name;
@@ -144,6 +145,7 @@ private:
 	void ConnectMaterialsToMeshes();
 	void assambleHierarki(MObject object, sHierarchy& parent, sJointChild& parentJoint,sMeshChild& parentMesh);
 	void AssembleBoundingBoxes();
+	MString getBaseAnimationName(MFnSkinCluster& skinCluster);
 
 	void ProcessInverseBindpose(MFnSkinCluster&, Skeleton&, MFnDependencyNode& parentNode); //gets inversebindPose and globalInverseBindpose
 	void ProcessSkeletalVertex (MFnSkinCluster& skinCluster, Skeleton& skeleton); //Gets vertices and weights for each triangleIndex
@@ -152,11 +154,14 @@ private:
 
 	vector<vertexDeform> GetSkinWeightsList(MDagPath skinPath, MFnSkinCluster& skinCluster, vector<Joint>joints);
 	void ProcessKeyframes (MFnSkinCluster& skinCluster, Skeleton& skeleton);
+	void ProcessKeyframes2(MFnSkinCluster& skinCluster, Skeleton& skeleton);
+	MObject& GetAnimationCurve(MString animationAttribute, MFnDependencyNode& jointDep);
 	std::array<char, 256> GetTexture(MPlugArray);
 	
 	
 	vector<MString> GetAnimLayers(const MString baseLayer);
-	void MuteAllLayersExcept(vector<MString>allLayers,MString ExceptLayer);
+	void MuteAllLayers(vector<MString>allLayers);
+	void unlockLayer(MString layer);
 	Transform GetTransform(MFnTransform &transform);
 
 };

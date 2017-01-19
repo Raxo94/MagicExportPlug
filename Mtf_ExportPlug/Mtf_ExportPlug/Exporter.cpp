@@ -107,7 +107,7 @@ void Exporter::writeModelsToFile(string outFilePath)
 
 	//Meshes
 	hMesh expMesh;
-	for (assembleStructs::Mesh mesh : meshes)
+	for (assembleStructs::Mesh& mesh : meshes)
 	{
 		dataSize += sizeof(hMesh);
 		expMesh.numAnimVertices = mesh.skelVertList.size();
@@ -115,9 +115,10 @@ void Exporter::writeModelsToFile(string outFilePath)
 		expMesh.numIndexes = mesh.indexList.size();
 		expMesh.parent = mesh.parent;
 			
-		memcpy(expMesh.pos, &mesh.transform.pos, 3);
-		memcpy(expMesh.rot, &mesh.transform.rot, 3);
-		memcpy(expMesh.scale,&mesh.transform.scale, 3);
+		//expMesh.pos = mesh.transform.pos;
+		memcpy(&expMesh.pos, mesh.transform.pos.data(), sizeof(float[3]));
+		memcpy(&expMesh.rot, mesh.transform.rot.data(), sizeof(float[3]));
+		memcpy(&expMesh.scale,mesh.transform.scale.data(), sizeof(float[3]));
 
 		expMesh.parentJoint = mesh.parentJoint;
 		expMesh.parentMesh = mesh.parentMesh;
@@ -177,11 +178,11 @@ void Exporter::writeModelsToFile(string outFilePath)
 	}
 
 	//Keyframes
-	for (Skeleton skeleton5 : skel)
+	for (Skeleton& skeleton5 : skel)
 	{
 		for(Joint& joint : skeleton5.jointVector)
 		{
-			for (sImAnimationState state : joint.animationState)
+			for (sImAnimationState& state : joint.animationState)
 			{
 				outFile.write((const char*)state.keyList.data(),state.keyList.size() * sizeof(sKeyFrame));
 				dataSize += state.keyList.size() * sizeof(sKeyFrame);
@@ -190,7 +191,7 @@ void Exporter::writeModelsToFile(string outFilePath)
 	}
 
 	//Vertices
-	for (assembleStructs::Mesh mesh : meshes)
+	for (assembleStructs::Mesh& mesh : meshes)
 	{
 		if (mesh.vertList.size() > 0)
 		{
@@ -199,7 +200,7 @@ void Exporter::writeModelsToFile(string outFilePath)
 		}
 	}
 	//skeletal vertice
-	for (assembleStructs::Mesh mesh : meshes)
+	for (assembleStructs::Mesh& mesh : meshes)
 	{
 		if (mesh.skelVertList.size() > 0)
 		{
@@ -209,7 +210,7 @@ void Exporter::writeModelsToFile(string outFilePath)
 	}
 
 	//Indices
-	for (assembleStructs::Mesh mesh : meshes)
+	for (assembleStructs::Mesh& mesh : meshes)
 	{
 		outFile.write((const char*)mesh.indexList.data(), sizeof(int) * mesh.indexList.size());
 		bufferSize += sizeof(int) * mesh.indexList.size();
