@@ -567,9 +567,6 @@ void ModelAssembler::ProcessKeyframes2(MFnSkinCluster & skinCluster, Skeleton & 
 	lockUnlockAllLayers(animLayers, false);
 
 
-
-	MFnDependencyNode jointDep(jointArray[6].node());
-
 	bool result;
 	MObject reference, reference2, reference3;
 	for (size_t i = 0; i < skeleton.jointVector.size(); i++)

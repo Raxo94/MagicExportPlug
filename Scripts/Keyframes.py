@@ -5,55 +5,50 @@ import maya.mel as mel
 
 class Keyframe:
 
-    scale = [1,1,1]
+    Scale = [1,1,1]
     translate = [0,0,0]
     rotation = [0,0,0]  
     time = 0   
-
-def ChangeLayer(LayerName,boolOn):
-   if boolOn == True:
-       command = 'animLayerEditorOnSelect ' + LayerName +' 1;'
-   else:
-       command = 'animLayerEditorOnSelect ' + LayerName +' 0;'
-   mel.eval(command)
 
 
 def returnThis(this):
     return this
 
-def GetJointKeyframes(jointName,keyframeList):
+def GetJointKeyframes(jointName):
     
-    pm.select(jointName)  
+    pm.select(jointName)
+      
     curr = first = pm.findKeyframe(jointName, which='first')
     pm.setCurrentTime(first)
-
-    
+        
     last = pm.findKeyframe(jointName, which='last')
     kc = pm.keyframe( jointName, sl=False, q=True, keyframeCount=True )/10 #THIS IS LOGICAL AND MAKES SENSE!
+    
+    #node.setKeyframe();
    
     print("\n")    
     if (kc>0):
+        keyframeList = [] 
         
         while curr <= last:
             
-            kf = Keyframe()
-            kf.time = curr
-            
             node = pm.PyNode(jointName)
-            kf.scale = node.getScale()
+            kf = Keyframe()
+            kf.time = curr /24
+            
+            
+            kf.Scale = node.getScale()
             kf.rotation = node.getRotation()
             kf.translation = node.getTranslation()
+            
+            print kf.Scale[0]
+            
+            print("SCALE: " + str(kf.Scale))
 
-            print ("JointName: " + jointName)
-            print ("Time: " + str(kf.time))
-            print("SCALE: " + str(kf.scale))
-            print("ROTATION: " + str(kf.rotation))
-            print("TRANSLATION: " + str(kf.translation))
-            print("\n")
     
             keyframeList.append(kf)
             if curr==last:
-                break
+                return keyframeList
           
             
             curr = pm.findKeyframe(jointName, time=curr, which='next')
@@ -61,8 +56,7 @@ def GetJointKeyframes(jointName,keyframeList):
             
             
             
-            
     else:
         print("No Keyframes in this animation layer")     
+   
             
-keyframes = []  
