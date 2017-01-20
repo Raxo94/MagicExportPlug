@@ -148,7 +148,8 @@ void Exporter::writeModelsToFile(string outFilePath)
 		for (Joint& joint : skeleton3.jointVector)
 		{
 			expJoint.animationStateCount = joint.animationState.size();
-			expJoint.globalBindposeInverse = joint.globalBindPoseInverse;
+			memcpy(&expJoint.globalBindposeInverse, joint.globalBindPoseInverse.data(), sizeof(float[16]));
+			//expJoint.globalBindposeInverse = joint.globalBindPoseInverse.data();
 			expJoint.parentJointID = joint.parentID;
 			expJoint.animationStateOffset = animationLayerCounter * sizeof(hAnimationState);
 			

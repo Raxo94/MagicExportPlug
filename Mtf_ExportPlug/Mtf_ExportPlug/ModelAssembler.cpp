@@ -210,7 +210,11 @@ void ModelAssembler::AssembleSkeletonsAndMeshes()
 					MString name = skinCluster.name(&res);
 
 				
+
+
 					ProcessInverseBindpose(skinCluster, skeleton, parentNode);
+					ProcessKeyframes2(skinCluster, skeleton);
+				
 					ProcessSkeletalVertex(skinCluster, skeleton);
 					for (size_t i = 0; i < skeleton.MeshVector.size(); i++)
 					{
@@ -221,13 +225,12 @@ void ModelAssembler::AssembleSkeletonsAndMeshes()
 						this->Meshes.push_back(skeleton.MeshVector.at(i));
 					}
 					
-					ProcessKeyframes(skinCluster, skeleton);
-					//ProcessKeyframes2(skinCluster, skeleton);
 					for(Joint& joint : skeleton.jointVector)
 					{
 						joint.skeletonID = Skeletons.size() - 1;
 						allModelJoints.push_back(joint);
 					}
+
 					this->Skeletons.push_back(skeleton);
 				}
 				else //check if there is no skinCluster
@@ -433,8 +436,10 @@ void ModelAssembler::ProcessSkeletalVertex(MFnSkinCluster& skinCluster, Skeleton
 				nodeVertices.at(i).vert.UV[0] = u[uvIDs[triangleIndices[i]]];
 				nodeVertices.at(i).vert.UV[1] = v[uvIDs[triangleIndices[i]]];
 
-				nodeVertices.at(i).weights = VertexDeformVector[polygonVertexIDs[triangleIndices[i]]].weights;
-				nodeVertices.at(i).influences = VertexDeformVector[polygonVertexIDs[triangleIndices[i]]].influences;
+				memcpy(&nodeVertices.at(i).weights, VertexDeformVector[polygonVertexIDs[triangleIndices[i]]].weights.data(),sizeof(float[4]));
+				memcpy(&nodeVertices.at(i).influences, VertexDeformVector[polygonVertexIDs[triangleIndices[i]]].influences.data(), sizeof(float[4]));
+				//nodeVertices.at(i).weights = VertexDeformVector[polygonVertexIDs[triangleIndices[i]]].weights;
+				//nodeVertices.at(i).influences = VertexDeformVector[polygonVertexIDs[triangleIndices[i]]].influences;
 
 				//Vi kollar till vilken vertex trianglen pekar på och hämtar den vikten
 			}
@@ -479,8 +484,8 @@ void ModelAssembler::ProcessSkeletalIndexes(vector<sSkeletonVertex>& unfilteredV
 }
 
 void ModelAssembler::ProcessKeyframes(MFnSkinCluster & skinCluster, Skeleton & skeleton)
-{	
-	
+{
+
 	MString BaseAnimation = getBaseAnimationName(skinCluster);
 
 	//pymel will be used
@@ -488,19 +493,18 @@ void ModelAssembler::ProcessKeyframes(MFnSkinCluster & skinCluster, Skeleton & s
 	MGlobal::executePythonCommand("import Keyframes as k");
 
 	vector<MString> animLayers = GetAnimLayers(BaseAnimation);
-	animLayers.push_back(BaseAnimation);
+
+	lockUnlockAllLayers(animLayers, false);
+
 	for (Joint& joint : skeleton.jointVector)
 	{
-		joint.animationStateCount = animLayers.size();
-		for (MString layer : animLayers)
+		for (MString& layer : animLayers)
 		{
-			MuteAllLayers(animLayers);
-			unlockLayer(BaseAnimation);
-			unlockLayer(layer);
+			soloLayer(layer,true);
 			MGlobal::executePythonCommand("keyList = k.GetJointKeyframes(\"" + joint.name + " \")");
 			MString amountOfKeyframes = MGlobal::executePythonCommandStringResult("len(keyList)");
 			sImAnimationState keyList;
-			
+
 
 			for (int keyIndex = 0; keyIndex < amountOfKeyframes.asInt(); keyIndex++)
 			{
@@ -512,7 +516,7 @@ void ModelAssembler::ProcessKeyframes(MFnSkinCluster & skinCluster, Skeleton & s
 				MString scaleX = MGlobal::executePythonCommandStringResult("keyList[" + keyIndexStringed + "].Scale[0]");
 				MString scaleY = MGlobal::executePythonCommandStringResult("keyList[" + keyIndexStringed + "].Scale[1]");
 				MString scaleZ = MGlobal::executePythonCommandStringResult("keyList[" + keyIndexStringed + "].Scale[2]");
-				
+
 				MString translateX = MGlobal::executePythonCommandStringResult("keyList[" + keyIndexStringed + "].translate[0]");
 				MString translateY = MGlobal::executePythonCommandStringResult("keyList[" + keyIndexStringed + "].translate[1]");
 				MString translateZ = MGlobal::executePythonCommandStringResult("keyList[" + keyIndexStringed + "].translate[2]");
@@ -531,7 +535,7 @@ void ModelAssembler::ProcessKeyframes(MFnSkinCluster & skinCluster, Skeleton & s
 				keyframe.keyTranslate[1] = translateY.asFloat();
 				keyframe.keyTranslate[2] = translateZ.asFloat();
 
-				
+
 				keyframe.keyRotate[0] = quaternion.x;
 				keyframe.keyRotate[1] = quaternion.y;
 				keyframe.keyRotate[2] = quaternion.z;
@@ -540,49 +544,171 @@ void ModelAssembler::ProcessKeyframes(MFnSkinCluster & skinCluster, Skeleton & s
 				keyList.keyList.push_back(keyframe);
 			}
 			joint.animationState.push_back(keyList);
+			soloLayer(layer, false);
 
-		}
-	}
+		}//end of animation layers
+	}//end of joints
+	lockUnlockAllLayers(animLayers, true);
 
 }
 
 void ModelAssembler::ProcessKeyframes2(MFnSkinCluster & skinCluster, Skeleton & skeleton)
 {
-
-	MString BaseAnimation = getBaseAnimationName(skinCluster);
-
-	//pymel will be used
 	MGlobal::executePythonCommandStringResult("import maya.mel as mel", true, true);
 	MGlobal::executePythonCommand("import Keyframes as k");
 	MGlobal::executePythonCommand("k = reload(Keyframes)");
 
-	vector<MString> animLayers = GetAnimLayers(BaseAnimation);
-	animLayers.push_back(BaseAnimation);
-
 	MDagPathArray jointArray;
 	skinCluster.influenceObjects(jointArray, &res);
 
-	MFnDependencyNode jointDep(jointArray[0].node());
 
-	MFnAnimCurve scaleX(GetAnimationCurve("scaleX",jointDep));
-
-
-
+	MString BaseAnimation = getBaseAnimationName(skinCluster);
+	vector<MString> animLayers = GetAnimLayers(BaseAnimation);
+	lockUnlockAllLayers(animLayers, false);
 
 
 
+	MFnDependencyNode jointDep(jointArray[6].node());
+
+	bool result;
+	MObject reference, reference2, reference3;
+	for (size_t i = 0; i < skeleton.jointVector.size(); i++)
+	{ 
+		MFnDependencyNode jointDep(jointArray[i].node());
+
+		for (MString& Layer : animLayers)
+		{
+			soloLayer(Layer, true);
+
+			result = GetAnimationCurveRotate(reference, "rotateX", jointDep);
+			if (result == true)
+			{
+				MFnAnimCurve rotateX(reference);
+
+				result = GetAnimationCurveRotate(reference, "rotateY", jointDep);
+				if (result == true)
+				{
+					MFnAnimCurve rotateY(reference);
+
+					result = GetAnimationCurveRotate(reference, "rotateZ", jointDep);
+					if (result == true)
+					{
+						MFnAnimCurve rotateZ(reference);
+						result = GetAnimationCurveTranslate(reference, "translateX", jointDep);
+						if (result == true)
+						{
+							MFnAnimCurve translateX(reference);
+							result = GetAnimationCurveTranslate(reference, "translateY", jointDep);
+							if (result == true)
+							{
+								MFnAnimCurve translateY(reference);
+								result = GetAnimationCurveTranslate(reference, "translateZ", jointDep);
+
+								if (result == true)
+								{
+									MFnAnimCurve translateZ(reference);
+									result = GetAnimationCurveScale(reference, "scaleX", jointDep);
+
+									if (result == true)
+									{
+										MFnAnimCurve scaleX(reference);
+										result = GetAnimationCurveScale(reference, "scaleY", jointDep);
+
+										if (result == true)
+										{
+											MFnAnimCurve scaleY(reference);
+											result = GetAnimationCurveScale(reference, "scaleZ", jointDep);
+
+											if (result == true)
+											{
+												int currCurve;
+
+												MFnAnimCurve scaleZ(reference);
+												int keyCount = rotateX.numKeys();;
+												int potentialKeyCount[9];
+
+												//potentialKeyCount[0] = rotateX.numKeys();
+												//potentialKeyCount[1] = rotateY.numKeys();;
+												//potentialKeyCount[2] = rotateZ.numKeys();
+												//potentialKeyCount[3] = translateX.numKeys();
+												//potentialKeyCount[4] = translateY.numKeys();;
+												//potentialKeyCount[5] = translateZ.numKeys();
+												//potentialKeyCount[6] = scaleX.numKeys();
+												//potentialKeyCount[7] = scaleY.numKeys();
+												//potentialKeyCount[8] = scaleZ.numKeys();
+
+												//for (size_t i = 0; i < 9; i++)
+												//{
+												//	if (potentialKeyCount[i] > keyCount)
+												//	{
+												//		keyCount = potentialKeyCount[i];
+												//		currCurve = i; //ho´w should this be used?
+												//	}
 
 
+												//}
+												sImAnimationState animationState;
+												for (unsigned int i = 0; i < keyCount; i++)
+												{
+													sKeyFrame temp;
+													double rotation[3];
+													float translation[3];
+													float scale[3];
+
+													rotation[0] = rotateX.value(i); //determines the value of the key at index
+													rotation[1] = rotateY.value(i);
+													rotation[2] = rotateZ.value(i);
+
+													MEulerRotation eulRotation(rotation[0], rotation[1], rotation[2]);
+													MQuaternion quaternion = eulRotation.asQuaternion();
+
+
+
+													temp.keyRotate[0] = quaternion.x;
+													temp.keyRotate[1] = quaternion.y;
+													temp.keyRotate[2] = quaternion.z;
+													temp.keyRotate[3] = quaternion.w;
+
+													//redo into quaternion
+
+													translation[0] = translateX.value(i); //determines the value of the key at index
+													translation[1] = translateY.value(i);
+													translation[2] = translateZ.value(i);
+													memcpy(&temp.keyTranslate, &translation, sizeof(float[3]));
+
+													scale[0] = scaleX.value(i);
+													scale[1] = scaleY.value(i);
+													scale[2] = scaleZ.value(i);
+													memcpy(&temp.keyScale, &scale, sizeof(float[3]));
+
+
+													MTime Time = translateX.time(i, &res).value(); //this should return the time in sek
+													float time = Time.as(MTime::kSeconds);
+													temp.keyTime = Time.as(MTime::kSeconds);
+													animationState.keyList.push_back(temp);
+
+												}
+												skeleton.jointVector.at(i).animationState.push_back(animationState);
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			
+				soloLayer(Layer, false);
+			}
+		}
+	}
+	lockUnlockAllLayers(animLayers, true);
 }
 
-MObject& ModelAssembler::GetAnimationCurve(MString animationAttribute, MFnDependencyNode& jointDep)
+bool ModelAssembler::GetAnimationCurveScale(MObject& reference, MString animationAttribute, MFnDependencyNode& jointDep)
 {
 
-	
-
 	MPlugArray pathToAnimation;
-
-
 	MPlug animationAtt = jointDep.findPlug(animationAttribute, &res);
 	MString plugName = animationAtt.name();
 
@@ -598,36 +724,273 @@ MObject& ModelAssembler::GetAnimationCurve(MString animationAttribute, MFnDepend
 		{
 			animationAtt = jointDep.findPlug("inputB", &res);
 			animationAtt.connectedTo(pathToAnimation, true, true, &res);
-			MString type = jointDep.typeName();
-			 
-			if (res == true ) for (size_t i = 0; i < pathToAnimation.length(); i++)
-			{
-				MFnDependencyNode jointDep = pathToAnimation[i].node(); //se if the connection is animCurve
-				MString type = jointDep.typeName();
+
+			if (res == true) for (size_t i = 0; i < pathToAnimation.length(); i++)
+			{//if this is true you are one step closer to finding the curves
+
+				MFnDependencyNode testDep = pathToAnimation[i].node(); //se if the connection is animCurve
+				MString type = testDep.typeName();
 				if (type == "animCurveTU")
 				{
-					return pathToAnimation[i].node();
+					reference = pathToAnimation[i].node(); //we found the curve
+					return true;
 				}
 			}
-			else if (!res) //if there is no animation curve 
-			{
-				animationAtt = jointDep.findPlug("inputA", &res);
-				animationAtt.connectedTo(pathToAnimation, true, true, &res);
-				MString type = jointDep.typeName();
 
-				if (res == true && pathToAnimation.length()<0) // Continue to next node
-				{
-					MFnDependencyNode jointDep = pathToAnimation[0].node(); //se if the connection is animCurve
-					MString type = jointDep.typeName();
-					if (type == "animationLayer")
-					{
-						return MObject();
-						//we have reached the end. Maybe this joint lacks keyframes
-					}
-				}
+			animationAtt = jointDep.findPlug("inputA", &res);
+			animationAtt.connectedTo(pathToAnimation, true, true, &res);
+			if (res == true && pathToAnimation.length() > 0) // Continue to next node
+			{
+				MFnDependencyNode recursive = pathToAnimation[0].node();
+				bool result = GetAnimationCurveScaleRecurse(reference, animationAttribute, recursive);
+				return result;
 			}
+			else
+			{
+				return false;
+			}
+			
 		}
 	}
+	else return false; //This is where you end up if you dont have correctAttribute
+}
+
+bool ModelAssembler::GetAnimationCurveScaleRecurse(MObject & reference, MString animationAttribute, MFnDependencyNode & jointDep)
+{
+	MPlugArray pathToAnimation;
+	MPlug animationAtt = jointDep.findPlug(animationAttribute, &res);
+	MString type = jointDep.typeName();
+
+	if (type == "animBlendNodeAdditiveScale")
+	{
+		animationAtt = jointDep.findPlug("inputB", &res);
+		animationAtt.connectedTo(pathToAnimation, true, true, &res);
+
+		if (res == true) for (size_t i = 0; i < pathToAnimation.length(); i++)
+		{//if this is true you are one step closer to finding the curves
+
+			MFnDependencyNode testDep = pathToAnimation[i].node(); //se if the connection is animCurve
+			MString type = testDep.typeName();
+			if (type == "animCurveTU")
+			{
+				reference = pathToAnimation[i].node(); //we found the curve
+				return true;
+			}
+		}
+
+		animationAtt = jointDep.findPlug("inputA", &res);
+		animationAtt.connectedTo(pathToAnimation, true, true, &res);
+		if (res == true && pathToAnimation.length() > 0) // Continue to next node
+		{
+			MFnDependencyNode recursive = pathToAnimation[0].node();
+			bool result = GetAnimationCurveScaleRecurse(reference, animationAttribute, recursive);
+			return result;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else return false; //This is where you end up if you dont have correctAttribute
+}
+
+bool ModelAssembler::GetAnimationCurveTranslate(MObject& reference,MString animationAttribute, MFnDependencyNode & jointDep)
+{
+	MPlugArray pathToAnimation;
+	MPlug animationAtt = jointDep.findPlug(animationAttribute, &res);
+	MString plugName = animationAtt.name();
+
+
+	animationAtt.connectedTo(pathToAnimation, true, false, &res);
+	if (res == true) for (int i = 0; i < pathToAnimation.length(); i++)
+	{//Loop to go trough all of the specified animation attribute.
+
+		
+		MFnDependencyNode jointDep = pathToAnimation[i].node();
+		MString type = jointDep.typeName();
+		if (type == "animBlendNodeAdditiveDL")
+		{
+			
+			animationAtt = jointDep.findPlug("inputB", &res);
+			animationAtt.connectedTo(pathToAnimation, true, true, &res);
+
+			if (res == true) for (size_t i = 0; i < pathToAnimation.length(); i++)
+			{
+				MFnDependencyNode testDep = pathToAnimation[i].node(); //se if the connection is animCurve
+				MString type = testDep.typeName();
+				if (type == "animCurveTL")
+				{
+					reference = pathToAnimation[i].node();
+					return true;
+				}
+			}
+				
+			animationAtt = jointDep.findPlug("inputA", &res);
+			animationAtt.connectedTo(pathToAnimation, true, true, &res);
+			if (res == true && pathToAnimation.length() > 0) // Continue to next node
+			{
+					
+				MFnDependencyNode recursive = pathToAnimation[0].node();
+				bool result = GetAnimationCurveTranslateRecurse(reference, animationAttribute,recursive);
+				return result;
+			}
+			else
+			{
+				return false;
+			}
+
+		
+		}
+		else return false;
+	}
+	else return false;
+}
+
+
+
+bool ModelAssembler::GetAnimationCurveTranslateRecurse(MObject & reference, MString animationAttribute, MFnDependencyNode & jointDep)
+{
+
+	MPlugArray pathToAnimation;
+	MString type = jointDep.typeName();
+	if (type == "animBlendNodeAdditiveDL")
+	{
+
+
+		MPlug animationAtt = jointDep.findPlug("inputB", &res);
+		animationAtt.connectedTo(pathToAnimation, true, true, &res);
+
+		if (res == true) for (size_t i = 0; i < pathToAnimation.length(); i++)
+		{
+			MFnDependencyNode testDep = pathToAnimation[i].node(); //se if the connection is animCurve
+			MString type = testDep.typeName();
+			if (type == "animCurveTL")
+			{
+				reference = pathToAnimation[i].node();
+				return true;
+			}
+		}
+		animationAtt = jointDep.findPlug("inputA", &res);
+		animationAtt.connectedTo(pathToAnimation, true, true, &res);
+		if (res == true && pathToAnimation.length() > 0) // Continue to next node
+		{
+			MFnDependencyNode recursive = pathToAnimation[0].node();
+			bool result = GetAnimationCurveTranslateRecurse(reference, animationAttribute, recursive);
+			return result;
+		}
+		else
+		{
+			return false;
+		}
+
+	}
+	else return false;
+}
+
+bool ModelAssembler::GetAnimationCurveRotate(MObject & reference, MString animationAttribute, MFnDependencyNode & jointDep)
+{
+	
+	MPlugArray pathToAnimation;
+	MPlug animationAtt = jointDep.findPlug(animationAttribute, &res);
+	MString name = animationAtt.name();
+	
+	MString att ="";
+	if (animationAttribute == "rotateX") att += "X";
+	else if(animationAttribute == "rotateY") att += "Y";
+	else { att += "Z"; }
+
+
+	animationAtt.connectedTo(pathToAnimation, true, false, &res);
+	if (res == true) for (int i = 0; i < pathToAnimation.length(); i++)
+	{
+
+		MFnDependencyNode jointDep = pathToAnimation[i].node(); 
+		MString type = jointDep.typeName(); //now we have the 
+		if (type == "animBlendNodeAdditiveRotation")
+		{
+			
+
+			MString inputAttB = "inputB" + att;
+			animationAtt = jointDep.findPlug(inputAttB, &res);
+			animationAtt.connectedTo(pathToAnimation, true, true, &res);
+			int count = pathToAnimation.length();
+			if (res == true) for (size_t i = 0; i < pathToAnimation.length(); i++)
+			{
+				MFnDependencyNode testDepth = pathToAnimation[i].node(); //se if the connection is animCurve
+				MString type = testDepth.typeName();
+				if (type == "animCurveTA")
+				{
+					reference = pathToAnimation[i].node();
+					return true;
+				}
+			}
+
+			MString inputAttA = "inputA" + att;
+			animationAtt = jointDep.findPlug(inputAttA, &res);
+			animationAtt.connectedTo(pathToAnimation, true, false, &res);
+			count = pathToAnimation.length();
+			if (res == true && pathToAnimation.length() > 0) // Continue to next node
+			{
+				MFnDependencyNode recursive = pathToAnimation[0].node();
+				bool result = GetAnimationCurveRotateRecurse(reference, animationAttribute,recursive);
+				return result;
+			}
+			else
+			{
+				return false;
+			}
+
+		}
+		else return false;
+	}
+	else return false;
+}
+
+bool ModelAssembler::GetAnimationCurveRotateRecurse(MObject & reference, MString animationAttribute, MFnDependencyNode & jointDep)
+{
+	MString att = "";
+	if (animationAttribute == "rotateX") att += "X";
+	else if (animationAttribute == "rotateY") att += "Y";
+	else { att += "Z"; }
+
+	MString type = jointDep.typeName(); 
+	if (type == "animBlendNodeAdditiveRotation")
+	{
+		MPlugArray pathToAnimation;
+
+		MString inputAttB = "inputB" + att;
+		MPlug animationAtt = jointDep.findPlug(inputAttB, &res);
+		animationAtt.connectedTo(pathToAnimation, true, true, &res);
+		int count = pathToAnimation.length();
+
+		if (res == true) for (size_t i = 0; i < pathToAnimation.length(); i++)
+		{
+			MFnDependencyNode testDepth = pathToAnimation[i].node(); //se if the connection is animCurve
+			MString type = testDepth.typeName();
+			if (type == "animCurveTA")
+			{
+				reference = pathToAnimation[i].node();
+				return true;
+			}
+		}
+
+		MString inputAttA = "inputA" + att;
+		animationAtt = jointDep.findPlug(inputAttA, &res);
+		animationAtt.connectedTo(pathToAnimation, true, false, &res);
+		count = pathToAnimation.length();
+
+		if (res == true && pathToAnimation.length() > 0) // Continue to next node
+		{
+			MFnDependencyNode recursive = pathToAnimation[0].node();
+			bool result = GetAnimationCurveRotate(reference, animationAttribute, recursive);
+			return result;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else return false;
 }
 
 
@@ -884,6 +1247,8 @@ MString ModelAssembler::getBaseAnimationName(MFnSkinCluster& skinCluster)
 
 
 
+
+
 std::array<char, 256> ModelAssembler::GetTexture(MPlugArray textureGroup)
 {
 	std::array<char, 256> result = {0};
@@ -901,11 +1266,14 @@ std::array<char, 256> ModelAssembler::GetTexture(MPlugArray textureGroup)
 vector<MString> ModelAssembler::GetAnimLayers(const MString baseLayer)
 {
 	MStatus res;
+	vector<MString> Layers;
+
+	Layers.push_back(baseLayer);
 
 	MGlobal::executePythonCommand("Layers = mel.eval('animLayer - query - children \"" + baseLayer + "\";')", true, true);
 	MString animationLayerCount = MGlobal::executePythonCommandStringResult("len(Layers)", true, true, &res);
 
-	vector<MString> Layers;
+	
 	for (int i = 0; i < animationLayerCount.asInt(); i++)
 	{
 		MString index; index += i;
@@ -919,23 +1287,42 @@ vector<MString> ModelAssembler::GetAnimLayers(const MString baseLayer)
 	
 }
 
-void ModelAssembler::MuteAllLayers(vector<MString> allLayers)
+void ModelAssembler::lockUnlockAllLayers(vector<MString> allLayers,bool lock)
 {
-	for (MString layer : allLayers)
+	if (lock == true)
 	{
-		MGlobal::executeCommand("animLayer - edit - mute true " + layer + ";");
-		MGlobal::executeCommand("animLayerEditorOnSelect \"" + layer +"\" 0;");
-		//MGlobal::executeCommand("sets - remove highlightList " + layer + ";");
+		for (MString layer : allLayers)
+		{
+			MGlobal::executeCommand("animLayer -edit -lock 1 " + layer + ";");
+			MGlobal::executeCommand("animLayer - edit - mute true " + layer + ";");
+			MGlobal::executeCommand("animLayerEditorOnSelect \"" + layer + "\" 0;");
+			MGlobal::executeCommand("sets - remove highlightList " + layer + ";");
+			MGlobal::executeCommand("animLayerSoloCallBack \"" + layer + "\" 0;");
+		}
+	}
+	else
+	{
+		for (MString layer : allLayers)
+		{
+			MGlobal::executeCommand("animLayer -edit -lock 0 " + layer + ";");
+			MGlobal::executeCommand("animLayer - edit - mute false " + layer + ";");
+			MGlobal::executeCommand("animLayerEditorOnSelect \"" + layer + "\" 0;");
+		}
 	}
 }
 
 
-void ModelAssembler::unlockLayer(MString layer)
+
+
+void ModelAssembler::soloLayer(MString layerToSolo,bool makeSolo)
 {
-	MGlobal::executeCommand("animLayer -edit -lock 0 " + layer + ";");
-	MGlobal::executeCommand("animLayer - edit - mute false " + layer + ";");
-	//MGlobal::executeCommand("sets - add highlightList " + layer + ";");
-	MGlobal::executeCommand("animLayerEditorOnSelect \"" + layer + "\" 1;");
+	if(makeSolo == true) 
+		MGlobal::executeCommand("animLayerSoloCallBack \"" + layerToSolo + "\" 1;");
+	else
+		MGlobal::executeCommand("animLayerSoloCallBack \"" + layerToSolo + "\" 0;");
+
+	
+
 }
 
 Transform ModelAssembler::GetTransform(MFnTransform & transform)

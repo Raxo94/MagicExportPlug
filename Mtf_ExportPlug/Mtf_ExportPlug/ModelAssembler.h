@@ -155,13 +155,24 @@ private:
 	vector<vertexDeform> GetSkinWeightsList(MDagPath skinPath, MFnSkinCluster& skinCluster, vector<Joint>joints);
 	void ProcessKeyframes (MFnSkinCluster& skinCluster, Skeleton& skeleton);
 	void ProcessKeyframes2(MFnSkinCluster& skinCluster, Skeleton& skeleton);
-	MObject& GetAnimationCurve(MString animationAttribute, MFnDependencyNode& jointDep);
+
+	bool GetAnimationCurveScale(MObject& reference, MString animationAttribute, MFnDependencyNode& jointDep);
+	bool GetAnimationCurveScaleRecurse(MObject& reference, MString animationAttribute, MFnDependencyNode& jointDep);
+
+	bool GetAnimationCurveTranslate(MObject& reference, MString animationAttribute, MFnDependencyNode& jointDep);
+	bool GetAnimationCurveTranslateRecurse(MObject& reference, MString animationAttribute, MFnDependencyNode& jointDep);
+
+	bool GetAnimationCurveRotate(MObject& reference, MString animationAttribute, MFnDependencyNode& jointDep);
+	bool GetAnimationCurveRotateRecurse(MObject& reference, MString animationAttribute, MFnDependencyNode& jointDep);
 	std::array<char, 256> GetTexture(MPlugArray);
 	
 	
 	vector<MString> GetAnimLayers(const MString baseLayer);
-	void MuteAllLayers(vector<MString>allLayers);
-	void unlockLayer(MString layer);
+	void lockUnlockAllLayers(vector<MString>allLayers,bool lock);
+	//void animLayerWeightEdit(MString);
+	void soloLayer(MString layerToSolo, bool makeSolo);
+
+
 	Transform GetTransform(MFnTransform &transform);
 
 };

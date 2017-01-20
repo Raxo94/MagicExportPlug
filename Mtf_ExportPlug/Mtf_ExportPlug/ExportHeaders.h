@@ -58,7 +58,7 @@ struct hAnimationState
 struct hJoint
 {
 	int parentJointID;
-	std::array<float, 16> globalBindposeInverse;
+	float globalBindposeInverse[16];
 
 	int animationStateCount;
 	int animationStateOffset;
@@ -108,8 +108,8 @@ struct sVertex
 struct sSkeletonVertex
 {
 	sVertex vert;
-	std::array<int, 4>influences;
-	std::array<float, 4>weights;
+	int influences[4];
+	float weights[4];
 };
 
 struct hSpawn
